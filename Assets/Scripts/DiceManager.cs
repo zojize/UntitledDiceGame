@@ -15,13 +15,24 @@ public class DiceManager : MonoBehaviour
     public Camera DiceCamera;
     public GameObject DiePrefab;
     public readonly List<Die> SelectedDice = new();
-    public Slider Slider; 
+    public Slider Slider;
     public bool DebugMode = false;
+
+    public record DiceGroupDragEventData
+    {
+        public PointerEventData PointerEventData { get; init; }
+        public List<Die> Group { get; init; }
+        public Die Initiator { get; init; }
+    }
+
+    private Die _groupDragInitiator;
+    public event Action<DiceGroupDragEventData> OnDiceGroupBeginDragEvent;
+    public event Action<DiceGroupDragEventData> OnDiceGroupDragEvent;
+    public event Action<DiceGroupDragEventData> OnDiceGroupEndDragEvent;
 
     public event Action<List<Die>> OnBeginSimulationEvent;
     public event Action<List<Die>> OnSimulationEvent;
     public event Action<List<Die>> OnEndSimulationEvent;
-
 
     private static int MAX_SIMULATION_FRAMES;
     private const float JITTER_POSITION_THRESHOLD = 0.01f;
@@ -62,7 +73,7 @@ public class DiceManager : MonoBehaviour
         }
     }
 
-    public void OnDieSelectionChangeDelegate(Die die)
+    public void OnDieSelectionChange(Die die)
     {
         if (die.IsSelected)
         {
@@ -85,10 +96,13 @@ public class DiceManager : MonoBehaviour
             return;
         }
 
-        foreach (var selectedDie in SelectedDice)
-        {
-            selectedDie.OnDiceGroupBeginDrag(eventData, die);
-        }
+        _groupDragInitiator = die;
+
+        OnDiceGroupBeginDragEvent?.Invoke(new DiceGroupDragEventData {
+            PointerEventData = eventData,
+            Group = SelectedDice,
+            Initiator = _groupDragInitiator,
+        });
     }
 
     public void OnDieDrag(PointerEventData eventData, Die die)
@@ -98,10 +112,11 @@ public class DiceManager : MonoBehaviour
             return;
         }
 
-        foreach (var selectedDie in SelectedDice)
-        {
-            selectedDie.OnDiceGroupDrag(eventData, die);
-        }
+        OnDiceGroupDragEvent?.Invoke(new DiceGroupDragEventData {
+            PointerEventData = eventData,
+            Group = SelectedDice,
+            Initiator = _groupDragInitiator,
+        });
     }
 
     private List<List<DiceRollState>> _simulationResult;
@@ -116,10 +131,13 @@ public class DiceManager : MonoBehaviour
             return;
         }
 
-        foreach (var selectedDie in SelectedDice)
-        {
-            selectedDie.OnDiceGroupEndDrag(eventData, die);
-        }
+        OnDiceGroupEndDragEvent?.Invoke(new DiceGroupDragEventData {
+            PointerEventData = eventData,
+            Group = SelectedDice,
+            Initiator = _groupDragInitiator,
+        });
+
+        _groupDragInitiator = null;
 
         BeginSimulation();
     }
@@ -216,8 +234,6 @@ public class DiceManager : MonoBehaviour
                     AngularVelocity = rb.angularVelocity
                 };
                 frameState.Add(state);
-
-                // Debug.Log($"Position: {state.Position}, Rotation: {state.Rotation}, Velocity: {state.Velocity}, Angular Velocity: {state.AngularVelocity}");
 
                 // Check if die is actually at rest
                 if (die.IsDiceResting())

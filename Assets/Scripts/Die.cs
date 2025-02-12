@@ -14,15 +14,15 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     public float[] Weights = new float[6] { 1, 1, 1, 1, 1, 1 };
 
     public event Action<Die> OnDieSelectionChangeEvent;
-    public DebugModeOptions DebugMode;
+    public DebugModeOptions DebugMode = DebugModeOptions.Gizmos;
     [Flags]
     public enum DebugModeOptions
     {
-        Disabled,
-        Drag,
-        Rest,
-        Gizmos,
-        Inspect,
+        Disabled = 0 << 0,
+        Drag = 1 << 0,
+        Rest = 1 << 1,
+        Gizmos = 1 << 2,
+        Inspect = 1 << 3,
     };
 
     private bool _isSelected = false;
@@ -33,8 +33,8 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         set
         {
             _isSelected = value;
+            SelectionChangeHandler(_isSelected);
             OnDieSelectionChangeEvent?.Invoke(this);
-            UpdateHighlight();
         }
     }
 
@@ -66,7 +66,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         OnBeginDragEvent += _diceManager.OnDieBeginDrag;
         OnDragEvent += _diceManager.OnDieDrag;
         OnEndDragEvent += _diceManager.OnDieEndDrag;
-        OnDieSelectionChangeEvent += _diceManager.OnDieSelectionChangeDelegate;
+        OnDieSelectionChangeEvent += _diceManager.OnDieSelectionChange;
         _diceManager.OnBeginSimulationEvent += OnSimulationBegin;
         _diceManager.OnEndSimulationEvent += OnSimulationEnd;
 
@@ -100,28 +100,24 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     {
         if (!dice.Contains(this)) return;
         _isSimulationRunning = true;
-        // _collider.enabled = false;
         _rigidbody.isKinematic = true;
         _rigidbody.useGravity = false;
-        // _rigidbody.detectCollisions = false;
     }
 
     private void OnSimulationEnd(List<Die> dice)
     {
         if (!dice.Contains(this)) return;
         _isSimulationRunning = false;
-        // _collider.enabled = true;
         _rigidbody.isKinematic = false;
         _rigidbody.useGravity = true;
-        // _rigidbody.detectCollisions = true;
-        Debug.Log($"linearVelocity: {_rigidbody.linearVelocity}, angularVelocity: {_rigidbody.angularVelocity}");
     }
 
     private void OnBeginDragHandler(PointerEventData eventData)
     {
         if (_isSimulationRunning) return;
         _isDragging = true;
-        _dragOffset = transform.position - GetMouseWorldPosition(eventData);
+        // _dragOffset = transform.position - GetMouseWorldPosition(eventData);
+        // _dragOffset = Vector3.zero;
         _rigidbody.useGravity = false;
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
@@ -130,15 +126,20 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (DebugMode.HasFlag(DebugModeOptions.Drag)) Debug.Log($"Begin drag: {name}");
-        OnBeginDragEvent?.Invoke(eventData, this);
         OnBeginDragHandler(eventData);
+        OnBeginDragEvent?.Invoke(eventData, this);
     }
 
-    public void OnDiceGroupBeginDrag(PointerEventData eventData, Die die)
+    private void OnDiceGroupBeginDrag(DiceManager.DiceGroupDragEventData eventData)
     {
-        if (die == this) return;
-        OnBeginDragHandler(eventData);
-        _dragOffset = transform.position - die.transform.position;
+        var points = Utils.GeneratePoints(2, eventData.Group.Count);
+        int indexInGroup = eventData.Group.IndexOf(this);
+        _dragOffset = points[indexInGroup];
+        Debug.Log($"Begin group drag: {eventData.Group.Count} dice, index: {indexInGroup}, offset: {_dragOffset}");
+        
+        if (eventData.Initiator == this) return;
+        OnBeginDragHandler(eventData.PointerEventData);
+
     }
 
     private void OnDragHandler(PointerEventData eventData)
@@ -159,10 +160,10 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         OnDragEvent?.Invoke(eventData, this);
     }
 
-    public void OnDiceGroupDrag(PointerEventData eventData, Die die)
+    private void OnDiceGroupDrag(DiceManager.DiceGroupDragEventData eventData)
     {
-        if (die == this) return;
-        OnDragHandler(eventData);
+        if (eventData.Initiator == this) return;
+        OnDragHandler(eventData.PointerEventData);
     }
 
     private void OnEndDragHandler(PointerEventData eventData)
@@ -182,11 +183,11 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         OnEndDragEvent?.Invoke(eventData, this);
     }
 
-    public void OnDiceGroupEndDrag(PointerEventData eventData, Die die)
+    private void OnDiceGroupEndDrag(DiceManager.DiceGroupDragEventData eventData)
     {
         if (DebugMode.HasFlag(DebugModeOptions.Drag)) Debug.Log($"End group drag: {name}");
-        if (die == this) return;
-        OnEndDragHandler(eventData);
+        if (eventData.Initiator == this) return;
+        OnEndDragHandler(eventData.PointerEventData);
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -196,11 +197,28 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         if (!_isDragging) IsSelected = !IsSelected;
     }
 
-    void UpdateHighlight()
+    public void SetHighlight(bool value)
     {
         if (_outline != null)
         {
-            _outline.enabled = IsSelected;
+            _outline.enabled = value;
+        }
+    }
+
+    private void SelectionChangeHandler(bool isSelected)
+    {
+        SetHighlight(isSelected);
+        if (isSelected)
+        {
+            _diceManager.OnDiceGroupBeginDragEvent += OnDiceGroupBeginDrag;
+            _diceManager.OnDiceGroupDragEvent += OnDiceGroupDrag;
+            _diceManager.OnDiceGroupEndDragEvent += OnDiceGroupEndDrag;
+        }
+        else
+        {
+            _diceManager.OnDiceGroupBeginDragEvent -= OnDiceGroupBeginDrag;
+            _diceManager.OnDiceGroupDragEvent -= OnDiceGroupDrag;
+            _diceManager.OnDiceGroupEndDragEvent -= OnDiceGroupEndDrag;
         }
     }
 
