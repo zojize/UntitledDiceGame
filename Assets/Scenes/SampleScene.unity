@@ -335,7 +335,7 @@ BoxCollider:
   m_Material: {fileID: 13400000, guid: a689290dede22af44bf0ae7f7f8ae4b9, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1276,7 +1276,7 @@ BoxCollider:
   m_Material: {fileID: 13400000, guid: a689290dede22af44bf0ae7f7f8ae4b9, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1574,7 +1574,7 @@ BoxCollider:
   m_Material: {fileID: 13400000, guid: a689290dede22af44bf0ae7f7f8ae4b9, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2082,7 +2082,7 @@ BoxCollider:
   m_Material: {fileID: 13400000, guid: a689290dede22af44bf0ae7f7f8ae4b9, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2227,6 +2227,10 @@ PrefabInstance:
     - target: {fileID: 4460574213801894726, guid: 3ea91b0cd94b9824090bd508e4959e6e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -55.821
+      objectReference: {fileID: 0}
+    - target: {fileID: 8685194831474656292, guid: 3ea91b0cd94b9824090bd508e4959e6e, type: 3}
+      propertyPath: DebugMode
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
