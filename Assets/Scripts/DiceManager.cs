@@ -12,9 +12,9 @@ namespace System.Runtime.CompilerServices
 
 public class DiceManager : MonoBehaviour
 {
+    public static DiceManager Instance { get; private set; }
     public Camera DiceCamera;
     public GameObject DiePrefab;
-    public readonly List<Die> SelectedDice = new();
     public Slider Slider;
     public bool DebugMode = false;
 
@@ -25,14 +25,16 @@ public class DiceManager : MonoBehaviour
         public Die Initiator { get; init; }
     }
 
-    private Die _groupDragInitiator;
-    public event Action<DiceGroupDragEventData> OnDiceGroupBeginDragEvent;
-    public event Action<DiceGroupDragEventData> OnDiceGroupDragEvent;
-    public event Action<DiceGroupDragEventData> OnDiceGroupEndDragEvent;
+    public static event Action<DiceGroupDragEventData> OnDiceGroupBeginDragEvent;
+    public static event Action<DiceGroupDragEventData> OnDiceGroupDragEvent;
+    public static event Action<DiceGroupDragEventData> OnDiceGroupEndDragEvent;
 
-    public event Action<List<Die>> OnBeginSimulationEvent;
-    public event Action<List<Die>> OnSimulationEvent;
-    public event Action<List<Die>> OnEndSimulationEvent;
+    public static event Action<List<Die>> OnBeginSimulationEvent;
+    public static event Action<List<Die>> OnSimulationEvent;
+    public static event Action<List<Die>> OnEndSimulationEvent;
+
+    private static Die _groupDragInitiator;
+    private static readonly List<Die> SelectedDice = new();
 
     private static int MAX_SIMULATION_FRAMES;
     private const float JITTER_POSITION_THRESHOLD = 0.01f;
@@ -41,15 +43,52 @@ public class DiceManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+        else
+        {
+            Instance = this;
+        }
+
+        var existingDice = Component.FindObjectsByType<Die>(FindObjectsSortMode.None);
+
+        foreach (var die in existingDice)
+        {
+            OnDieAwake(die);
+        }
+        Die.OnAwakeEvent += OnDieAwake;
+        Die.OnDisableEvent += OnDieDisable;
+
         // Set maximum simulation frames equal to 10 seconds of simulation
         MAX_SIMULATION_FRAMES = (int)(1f / Time.fixedDeltaTime) * 10;
         Slider.onValueChanged.AddListener((val) => _desiredSide = (int)val);
     }
 
-
-    public void AddDie()
+    private static void OnDieAwake(Die die)
     {
-        GameObject dieObject = Instantiate(DiePrefab, transform);
+        die.OnSelectionChangeEvent += OnDieSelectionChange;
+        die.OnBeginDragEvent += OnDieBeginDrag;
+        die.OnDragEvent += OnDieDrag;
+        die.OnEndDragEvent += OnDieEndDrag;
+    }
+
+    private static void OnDieDisable(Die die)
+    {
+        die.OnSelectionChangeEvent -= OnDieSelectionChange;
+        die.OnBeginDragEvent -= OnDieBeginDrag;
+        die.OnDragEvent -= OnDieDrag;
+        die.OnEndDragEvent -= OnDieEndDrag;
+
+        SelectedDice.Remove(die);
+    }
+
+
+    public static void AddDie()
+    {
+        GameObject dieObject = Instantiate(Instance.DiePrefab, Instance.transform);
         dieObject.transform.position = new Vector3(
             UnityEngine.Random.Range(0, -15),
             UnityEngine.Random.Range(0, 10),
@@ -57,13 +96,13 @@ public class DiceManager : MonoBehaviour
         );
     }
 
-    public void RemoveDie()
+    public static void RemoveDie()
     {
-        if (transform.childCount > 0)
+        if (Instance.transform.childCount > 0)
         {
-            for (int i = transform.childCount - 1; i >= 0; i--)
+            for (int i = Instance.transform.childCount - 1; i >= 0; i--)
             {
-                Transform child = transform.GetChild(i);
+                Transform child = Instance.transform.GetChild(i);
                 if (child.TryGetComponent<Die>(out var die))
                 {
                     Destroy(child.gameObject);
@@ -73,8 +112,11 @@ public class DiceManager : MonoBehaviour
         }
     }
 
-    public void OnDieSelectionChange(Die die)
+    public static void OnDieSelectionChange(Die die)
     {
+
+        Debug.Log($"OnDieSelectionChange: {die.name}");
+
         if (die.IsSelected)
         {
             if (!SelectedDice.Contains(die))
@@ -89,8 +131,9 @@ public class DiceManager : MonoBehaviour
     }
 
 
-    public void OnDieBeginDrag(PointerEventData eventData, Die die)
+    public static void OnDieBeginDrag(PointerEventData eventData, Die die)
     {
+
         if (!SelectedDice.Contains(die))
         {
             return;
@@ -98,40 +141,43 @@ public class DiceManager : MonoBehaviour
 
         _groupDragInitiator = die;
 
-        OnDiceGroupBeginDragEvent?.Invoke(new DiceGroupDragEventData {
+        OnDiceGroupBeginDragEvent?.Invoke(new DiceGroupDragEventData
+        {
             PointerEventData = eventData,
             Group = SelectedDice,
             Initiator = _groupDragInitiator,
         });
     }
 
-    public void OnDieDrag(PointerEventData eventData, Die die)
+    public static void OnDieDrag(PointerEventData eventData, Die die)
     {
         if (!SelectedDice.Contains(die))
         {
             return;
         }
 
-        OnDiceGroupDragEvent?.Invoke(new DiceGroupDragEventData {
+        OnDiceGroupDragEvent?.Invoke(new DiceGroupDragEventData
+        {
             PointerEventData = eventData,
             Group = SelectedDice,
             Initiator = _groupDragInitiator,
         });
     }
 
-    private List<List<DiceRollState>> _simulationResult;
-    private int[] _finalSides;
-    private bool _isSimulationRunning;
-    private float _simulationStart;
+    private static List<List<DiceRollState>> _simulationResult;
+    private static int[] _finalSides;
+    private static bool _isSimulationRunning;
+    private static float _simulationStart;
 
-    public void OnDieEndDrag(PointerEventData eventData, Die die)
+    public static void OnDieEndDrag(PointerEventData eventData, Die die)
     {
         if (!SelectedDice.Contains(die))
         {
             return;
         }
 
-        OnDiceGroupEndDragEvent?.Invoke(new DiceGroupDragEventData {
+        OnDiceGroupEndDragEvent?.Invoke(new DiceGroupDragEventData
+        {
             PointerEventData = eventData,
             Group = SelectedDice,
             Initiator = _groupDragInitiator,
@@ -142,14 +188,14 @@ public class DiceManager : MonoBehaviour
         BeginSimulation();
     }
 
-    private void BeginSimulation()
+    private static void BeginSimulation()
     {
         _isSimulationRunning = true;
 
         var startTime = Time.realtimeSinceStartup;
         var (result, sides) = SimulateDiceRoll(SelectedDice);
         var duration = Time.realtimeSinceStartup - startTime;
-        if (DebugMode) Debug.Log($"Simulation result for {SelectedDice.Count()} dice: {result.Count} frames, took {duration:F3}s");
+        if (Instance.DebugMode) Debug.Log($"Simulation result for {SelectedDice.Count()} dice: {result.Count} frames, took {duration:F3}s");
 
         _simulationResult = result;
         _finalSides = sides;
@@ -190,7 +236,7 @@ public class DiceManager : MonoBehaviour
     }
 
 
-    private (List<List<DiceRollState>> result, int[] sides) SimulateDiceRoll(IEnumerable<Die> dice)
+    private static (List<List<DiceRollState>> result, int[] sides) SimulateDiceRoll(IEnumerable<Die> dice)
     {
         List<List<DiceRollState>> result = new();
         List<DiceRollState> initialStates = new();
@@ -269,12 +315,12 @@ public class DiceManager : MonoBehaviour
 
         if (stableFrames > 0)
         {
-            if (DebugMode) Debug.Log($"Found {stableFrames} stable frames ({stableTime:F2}s) at end of simulation - removing stable sequence");
+            if (Instance.DebugMode) Debug.Log($"Found {stableFrames} stable frames ({stableTime:F2}s) at end of simulation - removing stable sequence");
             result.RemoveRange(result.Count - stableFrames, stableFrames);
         }
         else if (!allResting)
         {
-            if (DebugMode) Debug.LogWarning($"Dice simulation stopped after {frameCount} frames without reaching rest state");
+            if (Instance.DebugMode) Debug.LogWarning($"Dice simulation stopped after {frameCount} frames without reaching rest state");
         }
 
         // Restore physics state
@@ -283,7 +329,7 @@ public class DiceManager : MonoBehaviour
         return (result, sides);
     }
 
-    private int FindStableSequenceLength(List<List<DiceRollState>> records)
+    private static int FindStableSequenceLength(List<List<DiceRollState>> records)
     {
         if (records.Count < 2) return 0;
 
