@@ -1976,7 +1976,7 @@ MonoBehaviour:
   player: {fileID: 752068135}
   enemy: {fileID: 2133300015}
   playerHUD: {fileID: 15878772}
-  enemyHUD: {fileID: 15878772}
+  enemyHUD: {fileID: 1669346023}
   logText: {fileID: 100765754}
   gameOverPage: {fileID: 1957093139}
   wizardEffect: {fileID: 1396137624}
