@@ -208,7 +208,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 15878768}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7cd0e8da74eb3747b3129d07e231f54, type: 3}
+  m_Script: {fileID: 11500000, guid: e25bc0690146b434384b9128bd832af9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hpSlider: {fileID: 1505816040}
@@ -994,7 +994,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 906483575}
+      - m_Target: {fileID: 906483577}
         m_TargetAssemblyTypeName: CombatSystem, Assembly-CSharp
         m_MethodName: OnUseButton
         m_Mode: 1
@@ -1938,7 +1938,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 906483576}
-  - component: {fileID: 906483575}
+  - component: {fileID: 906483577}
   m_Layer: 0
   m_Name: CombatManager
   m_TagString: Untagged
@@ -1946,27 +1946,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &906483575
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 906483574}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 029febf4623495548921d16e98ba0e14, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  player: {fileID: 752068135}
-  enemy: {fileID: 2133300015}
-  playerHUD: {fileID: 15878772}
-  enemyHUD: {fileID: 1669346023}
-  logText: {fileID: 100765754}
-  gameOverPage: {fileID: 1957093139}
-  wizardEffect: {fileID: 1396137624}
-  enemyEffect: {fileID: 1375204983}
-  state: 0
 --- !u!4 &906483576
 Transform:
   m_ObjectHideFlags: 0
@@ -1982,6 +1961,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &906483577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906483574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bcd6a5b9e3d1dc4f8f3e258184553ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 752068135}
+  enemy: {fileID: 2133300015}
+  playerHUD: {fileID: 15878772}
+  enemyHUD: {fileID: 15878772}
+  logText: {fileID: 100765754}
+  gameOverPage: {fileID: 1957093139}
+  wizardEffect: {fileID: 1396137624}
+  enemyEffect: {fileID: 1375204983}
+  state: 0
 --- !u!1 &987060639
 GameObject:
   m_ObjectHideFlags: 0
@@ -2333,56 +2333,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1092669262}
   m_CullTransparentMesh: 1
---- !u!1 &1237675403
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1237675405}
-  - component: {fileID: 1237675404}
-  m_Layer: 0
-  m_Name: Dice
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1237675404
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1237675403}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 82b4b387ae7bc29449a927507538b016, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxDamage: 5
-  maxMod: 4
-  maxHeal: 5
-  currDamage: 0
-  currMod: 0
-  currHeal: 0
---- !u!4 &1237675405
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1237675403}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1281256645
 GameObject:
   m_ObjectHideFlags: 0
@@ -3271,7 +3221,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1669346019}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7cd0e8da74eb3747b3129d07e231f54, type: 3}
+  m_Script: {fileID: 11500000, guid: e25bc0690146b434384b9128bd832af9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hpSlider: {fileID: 700007704}
@@ -3756,4 +3706,3 @@ SceneRoots:
   - {fileID: 5151449261750380133}
   - {fileID: 4353971631967819288}
   - {fileID: 906483576}
-  - {fileID: 1237675405}
