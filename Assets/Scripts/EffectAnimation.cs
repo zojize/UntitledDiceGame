@@ -3,25 +3,37 @@ using System.Collections;
 
 public class EffectAnimation : MonoBehaviour
 {
-    Animator animator;
-    public GameObject effect;
-    public string animationName;
+    public GameObject heal;
+    public string healName;
+    public GameObject damage;
+
+    Animator healAnimator;
+    Animator damageAnimator;
 
     void Awake() {
-        effect.SetActive(false);
-        animator = effect.GetComponent<Animator>();
+        heal.SetActive(false);
+        damage.SetActive(false);
+        healAnimator = heal.GetComponent<Animator>();
+        damageAnimator = damage.GetComponent<Animator>();
     }
 
-    public void PlayEffect()
+    public void PlayHealEffect()
     {
-        effect.SetActive(true);
-        animator.Play(animationName);
-        StartCoroutine(DisableHealEffect());
+        heal.SetActive(true);
+        healAnimator.Play(healName);
+        StartCoroutine(DisableEffect(heal, healAnimator));
     }
 
-    IEnumerator DisableHealEffect()
+    public void PlayDamageEffect()
     {
-        yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
+        damage.SetActive(true);
+        damageAnimator.Play("DamageAnim");
+        StartCoroutine(DisableEffect(damage, damageAnimator));
+    }
+
+    IEnumerator DisableEffect(GameObject effect,Animator anim)
+    {
+        yield return new WaitForSeconds(anim.GetCurrentAnimatorStateInfo(0).length);
         effect.SetActive(false);
     }
 }
