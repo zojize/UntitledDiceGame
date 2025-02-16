@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public enum combatState {START, PLAYER, ENEMY, WON, LOST}
+public enum combatState { START, PLAYER, ENEMY, WON, LOST }
 
 public class CombatSystem : MonoBehaviour
 {
@@ -11,13 +11,13 @@ public class CombatSystem : MonoBehaviour
     public GameObject enemy;
 
     public CombatHUD playerHUD;
-	public CombatHUD enemyHUD;
+    public CombatHUD enemyHUD;
 
     public TMP_Text logText;
     public GameObject gameOverPage;
     public GameObject wizardEffect;
     public GameObject enemyEffect;
-    
+
     // For future spawning
     // public Transform playerLoc;
     // public Transform enemyLoc;
@@ -42,39 +42,43 @@ public class CombatSystem : MonoBehaviour
         SetUpCombat();
     }
 
-    void SetUpCombat() {
+    void SetUpCombat()
+    {
         // Not spawning different enemies yet
         // Intantiate(player, playerLoc);
         // Intantiate(enemy, enemyLoc);
 
         playerHUD.SetHUD(playerUnit);
-		enemyHUD.SetHUD(enemyUnit);
+        enemyHUD.SetHUD(enemyUnit);
 
         // yield return new WaitForSeconds(2f);
 
-		state = combatState.PLAYER;
-		// PlayerTurn();
+        state = combatState.PLAYER;
+        // PlayerTurn();
     }
 
     // void PlayerTurn()
-	// {
-	// 	// showButton
-	// }
+    // {
+    // 	// showButton
+    // }
 
-    public void OnUseButton() {
-		if (state != combatState.PLAYER)
-			return;
+    public void OnUseButton()
+    {
+        if (state != combatState.PLAYER)
+            return;
 
-		StartCoroutine(PlayerAction());
-	}
+        StartCoroutine(PlayerAction());
+    }
 
-    IEnumerator PlayerAction() {
+    IEnumerator PlayerAction()
+    {
         // calculate damage and hp
         int tempDamage = 0;
         int tempHP = 0;
         int tempMod = 1;
         GameObject dicePrefab = Resources.Load<GameObject>("Prefab/Dice");
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++)
+        {
             GameObject dice = Instantiate(dicePrefab);
             Dice diceInfo = dice.GetComponent<Dice>();
 
@@ -85,100 +89,111 @@ public class CombatSystem : MonoBehaviour
         }
         Debug.Log((tempDamage, tempHP, tempMod));
 
-        if (tempHP != 0) {
+        if (tempHP != 0)
+        {
             PlayerHeal(tempHP, tempMod);
             yield return new WaitForSeconds(1.5f);
         }
-        
-        if (tempHP == 0 && tempDamage == 0) {
+
+        if (tempHP == 0 && tempDamage == 0)
+        {
             // mod being taken as damage
             tempDamage = tempMod;
             tempMod = 1;
         }
 
-        if (tempDamage != 0) {
+        if (tempDamage != 0)
+        {
             PlayerAttack(tempDamage, tempMod);
             yield return new WaitForSeconds(1.5f);
         }
 
-        if (state == combatState.WON) {
+        if (state == combatState.WON)
+        {
             EndCombat();
-        } else {
-            StartCoroutine(EnemyTurn());   
+        }
+        else
+        {
+            StartCoroutine(EnemyTurn());
         }
     }
 
     void PlayerAttack(int damage, int mod)
-	{
+    {
         // TODO: spawning effect
-        int finalDamage = damage*mod;
+        int finalDamage = damage * mod;
 
-		bool isDead = enemyUnit.TakeDamage(finalDamage);
+        bool isDead = enemyUnit.TakeDamage(finalDamage);
 
-		enemyHUD.SetHP(enemyUnit.currHP);
-		logText.text = "The attack is successful! -" + damage + " x" + mod;
+        enemyHUD.SetHP(enemyUnit.currHP);
+        logText.text = "The attack is successful! -" + damage + " x" + mod;
 
-		if(isDead)
-		{
-			state = combatState.WON;
-		} 
-	}
+        if (isDead)
+        {
+            state = combatState.WON;
+        }
+    }
 
     void PlayerHeal(int hp, int mod)
-	{
+    {
         // TODO: spawning effect
 
-        int finalHp = hp*mod;
+        int finalHp = hp * mod;
 
-		playerUnit.Heal(finalHp);
+        playerUnit.Heal(finalHp);
 
-		playerHUD.SetHP(playerUnit.currHP);
+        playerHUD.SetHP(playerUnit.currHP);
 
         wizardEffectController.PlayEffect();
-        
-		logText.text = "You feel renewed strength! +" + hp + " x" 
+
+        logText.text = "You feel renewed strength! +" + hp + " x"
         + mod;
-	}
+    }
 
     IEnumerator EnemyTurn()
-	{
+    {
         int action = Random.Range(0, 2);
         bool isDead = false;
 
-        if (action == 0) {
+        if (action == 0)
+        {
             logText.text = "Enemy attacks!";
             isDead = playerUnit.TakeDamage(enemyUnit.damage);
             playerHUD.SetHP(playerUnit.currHP);
-        } else {
+        }
+        else
+        {
             logText.text = "Enemy gains more strength.";
             enemyUnit.Heal(5);
             enemyEffectController.PlayEffect();
             enemyHUD.SetHP(enemyUnit.currHP);
         }
-		
-		yield return new WaitForSeconds(1.5f);
 
-		if(isDead)
-		{
-			state = combatState.LOST;
-			EndCombat();
-		} else
-		{
-			state = combatState.PLAYER;
-			logText.text = "Your turn.";
-		}
+        yield return new WaitForSeconds(1.5f);
 
-	}
+        if (isDead)
+        {
+            state = combatState.LOST;
+            EndCombat();
+        }
+        else
+        {
+            state = combatState.PLAYER;
+            logText.text = "Your turn.";
+        }
+
+    }
 
     void EndCombat()
-	{
+    {
         gameOverPage.SetActive(true);
-		if(state == combatState.WON)
-		{
-			logText.text = "You won the battle!";
-		} else if (state == combatState.LOST)
-		{
-			logText.text = "You were defeated.";
-		}
-	}
+        if (state == combatState.WON)
+        {
+            logText.text = "You won the battle!";
+        }
+        else if (state == combatState.LOST)
+        {
+            logText.text = "You were defeated.";
+        }
+    }
 }
