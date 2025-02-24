@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -20,11 +21,15 @@ public class CombatSystem : MonoBehaviour
     public GameObject playerEffect;
     public GameObject enemyEffect;
 
+    // public DiceManager diceManager;
+    public bool liveDice = true;
+
+
     // For future spawning
     // public Transform playerLoc;
     // public Transform enemyLoc;
 
-    public combatState state;
+    private combatState state;
 
     Unit playerUnit;
     Unit enemyUnit;
@@ -41,6 +46,7 @@ public class CombatSystem : MonoBehaviour
         enemyUnit = enemy.GetComponent<Unit>();
         playerEffectController = playerEffect.GetComponent<EffectAnimation>();
         enemyEffectController = enemyEffect.GetComponent<EffectAnimation>();
+        DiceManager.OnEndSimulationEvent += onReceiveDiceInfo;
         SetUpCombat();
     }
 
@@ -52,62 +58,78 @@ public class CombatSystem : MonoBehaviour
 
         playerHUD.SetHUD(playerUnit);
         enemyHUD.SetHUD(enemyUnit);
-
-        // yield return new WaitForSeconds(2f);
-
         state = combatState.PLAYER;
-        // PlayerTurn();
     }
-
-    // void PlayerTurn()
-    // {
-    // 	// showButton
-    // }
 
     public void OnUseButton()
     {
-        if (state != combatState.PLAYER)
-            return;
+        if (!liveDice) {
+            if (state != combatState.PLAYER)
+                return;
 
-        StartCoroutine(PlayerAction());
+            StartCoroutine(PlayerAction());
+        }
+    }
+
+    public void onReceiveDiceInfo(List<Die> dice)
+    {
+        if (liveDice) {
+            if (state != combatState.PLAYER)
+                return;
+
+            StartCoroutine(PlayerAction());
+        }
     }
 
     IEnumerator PlayerAction()
     {
-        // calculate damage and hp
-        int tempDamage = 0;
-        int tempHP = 0;
-        int tempMod = 1;
-        GameObject dicePrefab = Resources.Load<GameObject>("Prefab/Dice");
-        for (int i = 0; i < 3; i++)
-        {
-            GameObject dice = Instantiate(dicePrefab);
-            Dice diceInfo = dice.GetComponent<Dice>();
+        if (liveDice) {
+            int damage = 0;
 
-            tempDamage += diceInfo.currDamage;
-            tempHP += diceInfo.currHeal;
-            tempMod *= diceInfo.currMod;
-            // Destroy(dice);
-        }
-        Debug.Log((tempDamage, tempHP, tempMod));
+            List<int> diceValues = DiceManager._desiredSides;
+            for (int i = 0; i < diceValues.Count; i++) {
+                damage += diceValues[i];
+            }
 
-        if (tempHP != 0)
-        {
-            PlayerHeal(tempHP, tempMod);
+            Debug.Log($"Damage: {damage}");
+            PlayerAttack(damage, 1);
             yield return new WaitForSeconds(1.5f);
-        }
+        } else {
+            // calculate damage and hp
+            int tempDamage = 0;
+            int tempHP = 0;
+            int tempMod = 1;
+            GameObject dicePrefab = Resources.Load<GameObject>("Prefab/Dice");
+            for (int i = 0; i < 3; i++)
+            {
+                GameObject dice = Instantiate(dicePrefab);
+                Dice diceInfo = dice.GetComponent<Dice>();
 
-        if (tempHP == 0 && tempDamage == 0)
-        {
-            // mod being taken as damage
-            tempDamage = tempMod;
-            tempMod = 1;
-        }
+                tempDamage += diceInfo.currDamage;
+                tempHP += diceInfo.currHeal;
+                tempMod *= diceInfo.currMod;
+                // Destroy(dice);
+            }
+            Debug.Log((tempDamage, tempHP, tempMod));
 
-        if (tempDamage != 0)
-        {
-            PlayerAttack(tempDamage, tempMod);
-            yield return new WaitForSeconds(1.5f);
+            if (tempHP != 0)
+            {
+                PlayerHeal(tempHP, tempMod);
+                yield return new WaitForSeconds(1.5f);
+            }
+
+            if (tempHP == 0 && tempDamage == 0)
+            {
+                // mod being taken as damage
+                tempDamage = tempMod;
+                tempMod = 1;
+            }
+
+            if (tempDamage != 0)
+            {
+                PlayerAttack(tempDamage, tempMod);
+                yield return new WaitForSeconds(1.5f);
+            }
         }
 
         if (state == combatState.WON)
