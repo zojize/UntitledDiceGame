@@ -27,6 +27,11 @@ public class Unit : MonoBehaviour
 			currHP = maxHP;
 	}
 
+	public void Reset()
+	{
+		currHP = maxHP;
+	}
+
     // // Start is called once before the first execution of Update after the MonoBehaviour is created
     // void Start()
     // {

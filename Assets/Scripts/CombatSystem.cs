@@ -225,4 +225,16 @@ public class CombatSystem : MonoBehaviour
             logText.text = "You were defeated.";
         }
     }
+
+    public void OnClickRestart()
+    {
+        logText.text = "";
+        gameOverPage.SetActive(false);
+        state = combatState.START;
+        playerUnit.Reset();
+        enemyUnit.Reset();
+        playerHUD.SetHP(playerUnit.currHP);
+        enemyHUD.SetHP(enemyUnit.currHP);
+        state = combatState.PLAYER;
+    }
 }
