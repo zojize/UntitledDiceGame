@@ -14,7 +14,6 @@ public class DiceManager : MonoBehaviour
 {
     public static DiceManager Instance { get; private set; }
     public Camera DiceCamera;
-    public GameObject DiePrefab;
     public Slider Slider;
     public bool DebugMode = false;
 
@@ -41,6 +40,8 @@ public class DiceManager : MonoBehaviour
     private const float JITTER_ROTATION_THRESHOLD = 0.1f;
     private int _desiredSide = 1;
 
+    private GameObject _diePrefab;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -52,6 +53,8 @@ public class DiceManager : MonoBehaviour
         {
             Instance = this;
         }
+
+        _diePrefab = Resources.Load<GameObject>("Prefabs/Die");
 
         var existingDice = Component.FindObjectsByType<Die>(FindObjectsSortMode.None);
 
@@ -88,7 +91,7 @@ public class DiceManager : MonoBehaviour
 
     public static void AddDie()
     {
-        GameObject dieObject = Instantiate(Instance.DiePrefab, Instance.transform);
+        GameObject dieObject = Instantiate(Instance._diePrefab, Instance.transform);
         dieObject.transform.position = new Vector3(
             UnityEngine.Random.Range(0, -15),
             UnityEngine.Random.Range(0, 10),
@@ -114,9 +117,6 @@ public class DiceManager : MonoBehaviour
 
     public static void OnDieSelectionChange(Die die)
     {
-
-        Debug.Log($"OnDieSelectionChange: {die.name}");
-
         if (die.IsSelected)
         {
             if (!SelectedDice.Contains(die))

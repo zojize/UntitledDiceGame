@@ -76,7 +76,7 @@ public class CombatSystem : MonoBehaviour
         int tempDamage = 0;
         int tempHP = 0;
         int tempMod = 1;
-        GameObject dicePrefab = Resources.Load<GameObject>("Prefab/Dice");
+        GameObject dicePrefab = Resources.Load<GameObject>("Prefabs/Dice");
         for (int i = 0; i < 3; i++)
         {
             GameObject dice = Instantiate(dicePrefab);
