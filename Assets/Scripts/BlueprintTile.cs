@@ -1,9 +1,13 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class BlueprintTile : MonoBehaviour, IPointerClickHandler
+public class BlueprintTile : MonoBehaviour, IPointerClickHandler, IDieFace
 {
-    public bool IsSelected;
+    public bool IsSelected { get; private set; }
+
+    public event Action<BlueprintTile> OnSelectionChangeEvent;
 
     private Renderer _renderer;
     // private Material _outlineMaterial;
@@ -11,15 +15,20 @@ public class BlueprintTile : MonoBehaviour, IPointerClickHandler
     public void Awake()
     {
         _renderer = GetComponent<Renderer>();
-        // _outlineMaterial = Instantiate(Resources.Load<Material>("Materials/PlaneOutlineMaterial"));
     }
 
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("Clicked on " + name);
+        // Debug.Log("Clicked on " + name);
         IsSelected = !IsSelected;
+        OnSelectionChangeEvent?.Invoke(this);
         SetOutline(IsSelected);
+    }
+
+    public void PreventSelection()
+    {
+        IsSelected = false;
     }
 
     public void SetTexture(Texture texture)

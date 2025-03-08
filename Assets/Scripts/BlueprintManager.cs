@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +15,9 @@ public class BlueprintManager : MonoBehaviour
 
     private GameObject _tilePrefab;
     private GameObject[] _grid;
-
+    private static readonly List<BlueprintTile> _selectedTiles = new();
+    private static readonly Dictionary<BlueprintTile, Vector2Int> _tilePositions = new();
+    private static readonly Dictionary<BlueprintTile, Vector2Int> _tileFolds = new();
     public void Awake()
     {
         if (Instance != null && Instance != this)
@@ -68,12 +71,12 @@ public class BlueprintManager : MonoBehaviour
         }
 
         var bounds = _tilePrefab.GetComponent<Renderer>().bounds;
-        
+
         float distanceToGrid = Mathf.Abs(ZCoord - Camera.transform.position.z);
-        
+
         var frustumCorners = new Vector3[4];
         Camera.CalculateFrustumCorners(new Rect(0, 0, 1, 1), distanceToGrid, Camera.MonoOrStereoscopicEye.Mono, frustumCorners);
-        
+
         for (int i = 0; i < 4; i++)
         {
             frustumCorners[i] = Camera.transform.TransformPoint(frustumCorners[i]);
@@ -96,7 +99,7 @@ public class BlueprintManager : MonoBehaviour
         var rawTileSize = new Vector2((topRight.x - bottomLeft.x) / GridSize.x, (topRight.y - bottomLeft.y) / GridSize.y);
         float squareTileSize = Mathf.Min(rawTileSize.x, rawTileSize.y);
         var tileSize = new Vector2(squareTileSize, squareTileSize);
-        
+
         var totalGridWidth = tileSize.x * GridSize.x;
         var totalGridHeight = tileSize.y * GridSize.y;
         var centerPoint = (bottomLeft + topRight) * 0.5f;
@@ -108,21 +111,24 @@ public class BlueprintManager : MonoBehaviour
 
         var tileOffset = new Vector2(tileSize.x / 2, tileSize.y / 2);
 
-        for (int i = 0; i < GridSize.x; i++)
+        for (int x = 0; x < GridSize.y; x++)
         {
-            for (int j = 0; j < GridSize.y; j++)
+            for (int y = 0; y < GridSize.x; y++)
             {
                 var tile = Instantiate(
                     _tilePrefab,
-                    new Vector3(bottomLeft.x + i * tileSize.x + tileOffset.x, bottomLeft.y + j * tileSize.y + tileOffset.y, bottomLeft.z),
+                    new Vector3(bottomLeft.x + x * tileSize.x + tileOffset.x, bottomLeft.y + y * tileSize.y + tileOffset.y, bottomLeft.z),
                     Quaternion.Euler(90, 180, 0)
                 );
+
                 tile.transform.parent = transform;
                 tile.transform.localScale = new Vector3(tileSize.x / bounds.size.x, 1, tileSize.y / bounds.size.y);
-                tile.name = $"Tile ({i}, {j})";
+                tile.name = $"Tile ({x}, {y})";
                 var bpTile = tile.GetComponent<BlueprintTile>();
+                bpTile.OnSelectionChangeEvent += OnTileSelectionChange;
                 bpTile.SetTexture(Resources.Load<Texture>($"Textures/dice_face_{Random.Range(1, 7)}"));
-                _grid[i * GridSize.y + j] = tile;
+                _grid[y * GridSize.x + x] = tile;
+                _tilePositions[bpTile] = new Vector2Int(x, y);
             }
         }
     }
@@ -131,6 +137,105 @@ public class BlueprintManager : MonoBehaviour
     {
         ClearGrid();
         CreateGrid();
+    }
+
+    public void OnTileSelectionChange(BlueprintTile tile)
+    {
+        if (tile.IsSelected)
+        {
+            // if selected dice plus this one does not form a cube then deselect this one
+            Debug.Log($"Selected tile: {_tilePositions[tile]}");
+            _selectedTiles.Add(tile);
+            TryFoldIntoDie();
+
+
+            // if (_currentDie == null)
+            // {
+            //     _currentDie = new DieLogic();
+            //     _currentDie.SetFace(Side.Top, tile);
+            //     SelectedTiles.Add(tile);
+            //     return;
+            // }
+
+            // if (_currentDie.TrySetFace(tile))
+            // {
+            //     SelectedTiles.Add(tile);
+            // }
+            // else
+            // {
+            //     tile.PreventSelection();
+            // }
+        }
+        else
+        {
+            _selectedTiles.Remove(tile);
+        }
+    }
+
+
+    public Dictionary<BlueprintTile, Vector2Int> TryFoldIntoDie()
+    {
+        Dictionary<BlueprintTile, Vector2Int> folds = new();
+
+
+        while (folds.Count < _selectedTiles.Count - 1)
+        {
+            var initialCount = folds.Count;
+
+            foreach (var tile in _selectedTiles)
+            {
+                if (folds.ContainsKey(tile))
+                {
+                    continue;
+                }
+
+                var position = _tilePositions[tile];
+                var neighbors = new List<Vector2Int>
+                {
+                    Vector2Int.up,
+                    Vector2Int.down,
+                    Vector2Int.left,
+                    Vector2Int.right,
+                };
+
+                var neighborTiles = neighbors
+                    .Select(n => position + n)
+                    .Select(n => _grid.ElementAtOrDefault(n.y * GridSize.x + n.x))
+                    .Where(t => t != null)
+                    .Select(t => t.GetComponent<BlueprintTile>())
+                    // .Where(t =>
+                    // {
+                    //     Debug.Log($"Checking {t.name}: {t.IsSelected} && {!folds.ContainsKey(t)}");
+                    //     return t.IsSelected && !folds.ContainsKey(t);
+                    // })
+                    .Where(t => t.IsSelected && !folds.ContainsKey(t))
+                    .ToList();
+
+                Debug.Log($"{position} N neighbors: {neighborTiles.Count}");
+
+                if (neighborTiles.Count == 1)
+                {
+                    folds[tile] = _tilePositions[neighborTiles[0]] - position;
+                }
+            }
+
+            if (folds.Count == initialCount)
+            {
+                Debug.Log("No more folds found");
+                return null;
+            }
+        }
+
+        Debug.Log($"Folds ({folds.Count}):");
+        foreach (var fold in folds)
+        {
+            Debug.Log($"{fold.Key.name} -> {fold.Value}");
+        }
+
+        // var sum = folds.Values.Aggregate(Vector2Int.zero, (a, b) => a + b);
+        // Debug.Log($"Sum: {sum}");
+
+        return null;
     }
 }
 

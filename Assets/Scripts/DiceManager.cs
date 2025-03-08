@@ -38,7 +38,7 @@ public class DiceManager : MonoBehaviour
     private static int MAX_SIMULATION_FRAMES;
     private const float JITTER_POSITION_THRESHOLD = 0.01f;
     private const float JITTER_ROTATION_THRESHOLD = 0.1f;
-    private int _desiredSide = 1;
+    private Side _desiredSide = Side.Top;
 
     private GameObject _diePrefab;
 
@@ -67,7 +67,7 @@ public class DiceManager : MonoBehaviour
 
         // Set maximum simulation frames equal to 10 seconds of simulation
         MAX_SIMULATION_FRAMES = (int)(1f / Time.fixedDeltaTime) * 10;
-        Slider.onValueChanged.AddListener((val) => _desiredSide = (int)val);
+        Slider.onValueChanged.AddListener((val) => _desiredSide = (Side)val);
     }
 
     private static void OnDieAwake(Die die)
@@ -119,10 +119,7 @@ public class DiceManager : MonoBehaviour
     {
         if (die.IsSelected)
         {
-            if (!SelectedDice.Contains(die))
-            {
-                SelectedDice.Add(die);
-            }
+            SelectedDice.Add(die);
         }
         else
         {
@@ -165,7 +162,7 @@ public class DiceManager : MonoBehaviour
     }
 
     private static List<List<DiceRollState>> _simulationResult;
-    private static int[] _finalSides;
+    private static Side[] _finalSides;
     private static bool _isSimulationRunning;
     private static float _simulationStart;
 
@@ -236,12 +233,12 @@ public class DiceManager : MonoBehaviour
     }
 
 
-    private static (List<List<DiceRollState>> result, int[] sides) SimulateDiceRoll(IEnumerable<Die> dice)
+    private static (List<List<DiceRollState>> result, Side[] sides) SimulateDiceRoll(IEnumerable<Die> dice)
     {
         List<List<DiceRollState>> result = new();
         List<DiceRollState> initialStates = new();
         var diceArray = dice.ToArray();
-        var sides = Enumerable.Repeat(0, diceArray.Length).ToArray();
+        var sides = Enumerable.Repeat((Side)0, diceArray.Length).ToArray();
 
         // Store current physics state
         var originalSimMode = Physics.simulationMode;

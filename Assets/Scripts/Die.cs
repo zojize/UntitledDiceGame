@@ -4,6 +4,22 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+public interface IDieFace
+{
+    // placeholder for now
+}
+
+public enum Side
+{
+    Top = 1,
+    Right = 2,
+    Front = 3,
+    Back = 4,
+    Left = 5,
+    Bottom = 6
+}
+
+
 public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
     public float DragZPosition = -2f;
@@ -25,17 +41,18 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     };
 
     private bool _isSelected = false;
-    [HideInInspector]
     public bool IsSelected
     {
         get => _isSelected;
-        set
+        private set
         {
             _isSelected = value;
             SelectionChangeHandler(_isSelected);
             OnSelectionChangeEvent?.Invoke(this);
         }
     }
+
+
 
     public static event Action<Die> OnAwakeEvent;
     public static event Action<Die> OnDisableEvent;
@@ -56,7 +73,8 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     private Vector3 _desiredVelocity;
     private Vector3 _steeringForce;
     private float _dragEndTime;
-    private readonly Transform[] _sides = new Transform[6];
+    private readonly Transform[] _sideTransforms = new Transform[6];
+    private readonly IDieFace[] _faces = new IDieFace[6];
     private bool _isSimulationRunning = false;
 
     public void Awake()
@@ -78,7 +96,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
             if (child.name.StartsWith("Side"))
             {
                 int sideIndex = int.Parse(child.name[4..]) - 1;
-                _sides[sideIndex] = child;
+                _sideTransforms[sideIndex] = child;
             }
         }
 
@@ -133,7 +151,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         int indexInGroup = eventData.Group.IndexOf(this);
         _dragOffset = points[indexInGroup];
         Debug.Log($"Begin group drag: {eventData.Group.Count} dice, index: {indexInGroup}, offset: {_dragOffset}");
-        
+
         if (eventData.Initiator == this) return;
         OnBeginDragHandler(eventData.PointerEventData);
 
@@ -314,19 +332,19 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         return _rigidbody.IsSleeping() || (_rigidbody.linearVelocity.magnitude < 0.01f && _rigidbody.angularVelocity.magnitude < 0.01f);
     }
 
-    public int GetTopSide()
+    public Side GetTopSide()
     {
         float maxDot = 0;
         int topSide = 0;
         for (int i = 0; i < 6; i++)
         {
             // the correct up direction is the one closest to Vector3.back
-            float dot = Vector3.Dot(_sides[i].up, Vector3.back);
+            float dot = Vector3.Dot(_sideTransforms[i].up, Vector3.back);
             if (dot <= maxDot) continue;
             maxDot = dot;
             topSide = i + 1;
         }
-        return topSide;
+        return (Side)topSide;
     }
 
     private void Inspect()
@@ -334,7 +352,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         Debug.Log($"Resting: {_rigidbody.IsSleeping()}, Velocity: {_rigidbody.linearVelocity}, Angular Velocity: {_rigidbody.angularVelocity}, Top Side: {GetTopSide()}");
     }
 
-    public int Roll()
+    public Side Roll()
     {
         float totalWeight = 0;
         for (int i = 0; i < 6; i++)
@@ -355,7 +373,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
             }
         }
 
-        return result;
+        return (Side)result;
     }
 
     // Add these rotation lookup tables
@@ -369,19 +387,22 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         {(6, 1), new Vector3(180, 0, 0)}   // Bottom face to top
     };
 
-    public void RotateToDesiredSide(int fromSide, int toSide)
+    public void RotateToDesiredSide(Side fromSide, Side toSide)
     {
         if (fromSide == toSide) return;
 
+        var fromIndex = (int)fromSide;
+        var toIndex = (int)toSide;
+
         // Try to find direct rotation in lookup table
-        if (RotationTable.TryGetValue((fromSide, toSide), out Vector3 rotation))
+        if (RotationTable.TryGetValue((fromIndex, toIndex), out Vector3 rotation))
         {
             transform.Rotate(rotation);
             return;
         }
 
         // If not found, calculate inverse rotation
-        if (RotationTable.TryGetValue((toSide, fromSide), out rotation))
+        if (RotationTable.TryGetValue((toIndex, fromIndex), out rotation))
         {
             // Invert the rotation
             transform.Rotate(-rotation);
@@ -389,15 +410,29 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         }
 
         // If neither direct nor inverse found, rotate via top face
-        if (fromSide != 1)
+        if (fromSide != Side.Top)
         {
             // First rotate to top
-            RotateToDesiredSide(fromSide, 1);
+            RotateToDesiredSide(fromSide, Side.Top);
         }
-        if (toSide != 1)
+        if (toSide != Side.Top)
         {
             // Then rotate from top to destination
-            RotateToDesiredSide(1, toSide);
+            RotateToDesiredSide(Side.Top, toSide);
         }
+    }
+
+    public IDieFace GetFace(Side side)
+    {
+        return _faces[(int)side - 1];
+    }
+
+    public bool TrySetFace(Side side, IDieFace face)
+    {
+        if (_faces[(int)side - 1] != null)
+            return false;
+
+        _faces[(int)side - 1] = face;
+        return true;
     }
 }
