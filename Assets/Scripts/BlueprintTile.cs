@@ -6,6 +6,13 @@ using UnityEngine.EventSystems;
 public class BlueprintTile : MonoBehaviour, IPointerClickHandler, IDieFace
 {
     public bool IsSelected { get; private set; }
+    public Transform Up;
+    public Transform Down;
+    public Transform Left;
+    public Transform Right;
+
+    public DieFaceType Type { get; set; }
+    public int Value { get; set; }
 
     public event Action<BlueprintTile> OnSelectionChangeEvent;
 
@@ -15,6 +22,11 @@ public class BlueprintTile : MonoBehaviour, IPointerClickHandler, IDieFace
     public void Awake()
     {
         _renderer = GetComponent<Renderer>();
+
+        Up = transform.Find("Up");
+        Down = transform.Find("Down");
+        Left = transform.Find("Left");
+        Right = transform.Find("Right");
     }
 
 
@@ -39,6 +51,6 @@ public class BlueprintTile : MonoBehaviour, IPointerClickHandler, IDieFace
 
     private void SetOutline(bool enable)
     {
-        _renderer.material.SetFloat("_OutlineEnabled", enable ? 1 : 0);
+        _renderer.material.SetVector("_OutlineColor", enable ? Color.yellow : Color.black);
     }
 }

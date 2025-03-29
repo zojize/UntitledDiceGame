@@ -4,9 +4,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+public enum DieFaceType {
+    Damage,
+    Heal,
+    Multiplier,
+}
+
 public interface IDieFace
 {
-    // placeholder for now
+    public DieFaceType Type { get; set; }
+    public int Value { get; set; }
 }
 
 public enum Side

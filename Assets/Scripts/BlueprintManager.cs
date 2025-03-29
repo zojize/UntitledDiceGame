@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -14,10 +15,13 @@ public class BlueprintManager : MonoBehaviour
 
 
     private GameObject _tilePrefab;
+    private GameObject _diePrefab;
     private GameObject[] _grid;
     private static readonly List<BlueprintTile> _selectedTiles = new();
     private static readonly Dictionary<BlueprintTile, Vector2Int> _tilePositions = new();
-    private static readonly Dictionary<BlueprintTile, Vector2Int> _tileFolds = new();
+    private static UnityEngine.UI.Button _foldButton;
+    private static Vector2 _tileSize;
+
     public void Awake()
     {
         if (Instance != null && Instance != this)
@@ -31,9 +35,175 @@ public class BlueprintManager : MonoBehaviour
         }
 
         _tilePrefab = Resources.Load<GameObject>("Prefabs/BlueprintTile");
+        _diePrefab = Resources.Load<GameObject>("Prefabs/Die");
+
+        GameObject button = GameObject.Find("FoldButton");
+        _foldButton = button.GetComponent<UnityEngine.UI.Button>();
+
+        _foldButton.onClick.AddListener(() =>
+        {
+            var die = CreateDieFromSelection();
+            if (die == null)
+            {
+                Debug.Log("Failed to create die");
+                return;
+            }
+            else
+                Debug.Log($"Die: {die}");
+            // var folds = TryFoldIntoDie();
+            // if (folds != null)
+            //     StartCoroutine(FoldDie(folds));
+        });
 
         CreateGrid();
     }
+
+    public GameObject CreateDieFromSelection()
+    {
+        if (_selectedTiles.Count != 6)
+        {
+            Debug.Log("Not enough tiles selected to create a die");
+            return null;
+        }
+
+        var die = Instantiate(_diePrefab);
+        var dieComponent = die.GetComponent<Die>();
+        var rigidbody = die.GetComponent<Rigidbody>();
+        rigidbody.isKinematic = true;
+
+        List<Side> allSides = new()
+        {
+            Side.Top,
+            Side.Bottom,
+            Side.Left,
+            Side.Right,
+            Side.Front,
+            Side.Back
+        };
+        Dictionary<BlueprintTile, List<Side>> tileToSides = _selectedTiles.Select(t =>
+        {
+            return (t, allSides.ToList());
+        }).ToDictionary(t => t.t, t => t.Item2);
+
+        Dictionary<Side, List<Side>> validNeighbors = new()
+        {
+            { Side.Top, new List<Side> { Side.Left, Side.Right, Side.Back, Side.Front } },
+            { Side.Bottom, new List<Side> { Side.Left, Side.Right, Side.Back, Side.Front } },
+            { Side.Left, new List<Side> { Side.Top, Side.Bottom, Side.Back, Side.Front } },
+            { Side.Right, new List<Side> { Side.Top, Side.Bottom, Side.Back, Side.Front } },
+            { Side.Front, new List<Side> { Side.Top, Side.Bottom, Side.Left, Side.Right } },
+            { Side.Back, new List<Side> { Side.Top, Side.Bottom, Side.Left, Side.Right } }
+        };
+
+        tileToSides[_selectedTiles[0]] = new List<Side>
+        {
+            Side.Top,
+        };
+
+        List<BlueprintTile> workList = new()
+        {
+            _selectedTiles[0]
+        };
+
+        List<Side> usedSides = new()
+        {
+            Side.Top
+        };
+
+        while (workList.Count > 0)
+        {
+            var tile = workList[0];
+            workList.RemoveAt(0);
+            var position = _tilePositions[tile];
+
+            var neighbors = new List<Vector2Int>
+            {
+                Vector2Int.up,
+                Vector2Int.down,
+                Vector2Int.left,
+                Vector2Int.right,
+            };
+
+            var neighborTiles = neighbors
+                .Select(n => position + n)
+                .Select(n => _grid.ElementAtOrDefault(n.y * GridSize.x + n.x))
+                .Where(t => t != null)
+                .Select(t => t.GetComponent<BlueprintTile>())
+                .Where(t => _selectedTiles.Contains(t))
+                .ToList();
+
+            foreach (var neighbor in neighborTiles)
+            {
+                var prevSidesCount = tileToSides[neighbor].Count;
+
+                foreach (var side in tileToSides[tile])
+                {
+                    tileToSides[neighbor] = tileToSides[neighbor]
+                        .Intersect(validNeighbors[side])
+                        .ToList();
+                }
+
+                if (tileToSides[neighbor].Count == 1)
+                {
+                    var side = tileToSides[neighbor][0];
+                    if (usedSides.Contains(side))
+                    {
+                        Debug.Log($"Side {side} already used for tile {tile.name}");
+                        Destroy(die);
+                        return null;
+                    }
+
+                    usedSides.Add(side);
+                }
+                else
+                {
+                    tileToSides[neighbor] = tileToSides[neighbor]
+                        .Where(s => !usedSides.Contains(s))
+                        .ToList();
+                }
+
+                Debug.Log($"Tile {tile.name}");
+                Debug.Log($"Tile to sides: {string.Join(", \n", tileToSides.Select(t => $"{t.Key.name}: {string.Join(", ", t.Value)}"))}");
+                if (tileToSides[neighbor].Count == 0)
+                {
+                    Debug.Log($"No valid sides for neighbor {neighbor.name}");
+
+                    Destroy(die);
+                    return null;
+                }
+
+                if (prevSidesCount == tileToSides[neighbor].Count)
+                {
+                    continue;
+                }
+
+                Debug.Log($"Adding neighbor {neighbor.name} to work list");
+                workList.Add(neighbor);
+            }
+        }
+
+        if (tileToSides.Values.Any(s => s.Count != 1))
+        {
+            Debug.Log("No valid sides for some tiles");
+            Debug.Log($"Tile to sides: {string.Join(", \n", tileToSides.Select(t => $"{t.Key.name}: {string.Join(", ", t.Value)}"))}");
+            Destroy(die);
+            return null;
+        }
+
+        foreach (var tile in tileToSides)
+        {
+            var side = tile.Value[0];
+            if (!dieComponent.TrySetFace(side, tile.Key))
+            {
+                Debug.Log($"Failed to set face {side} for tile {tile.Key.name}");
+                Destroy(die);
+                return null;
+            }
+        }
+
+        return die;
+    }
+
 
     public void ClearGrid()
     {
@@ -99,6 +269,7 @@ public class BlueprintManager : MonoBehaviour
         var rawTileSize = new Vector2((topRight.x - bottomLeft.x) / GridSize.x, (topRight.y - bottomLeft.y) / GridSize.y);
         float squareTileSize = Mathf.Min(rawTileSize.x, rawTileSize.y);
         var tileSize = new Vector2(squareTileSize, squareTileSize);
+        _tileSize = tileSize;
 
         var totalGridWidth = tileSize.x * GridSize.x;
         var totalGridHeight = tileSize.y * GridSize.y;
@@ -124,9 +295,14 @@ public class BlueprintManager : MonoBehaviour
                 tile.transform.parent = transform;
                 tile.transform.localScale = new Vector3(tileSize.x / bounds.size.x, 1, tileSize.y / bounds.size.y);
                 tile.name = $"Tile ({x}, {y})";
+
                 var bpTile = tile.GetComponent<BlueprintTile>();
                 bpTile.OnSelectionChangeEvent += OnTileSelectionChange;
-                bpTile.SetTexture(Resources.Load<Texture>($"Textures/dice_face_{Random.Range(1, 7)}"));
+                var randValue = Random.Range(1, 7);
+                bpTile.Value = randValue;
+                var randType = DieFaceType.Damage; // TODO: randomize this
+                bpTile.Type = randType;
+                bpTile.SetTexture(Resources.Load<Texture>($"Textures/dice_face_{randValue}"));
                 _grid[y * GridSize.x + x] = tile;
                 _tilePositions[bpTile] = new Vector2Int(x, y);
             }
@@ -146,7 +322,7 @@ public class BlueprintManager : MonoBehaviour
             // if selected dice plus this one does not form a cube then deselect this one
             Debug.Log($"Selected tile: {_tilePositions[tile]}");
             _selectedTiles.Add(tile);
-            TryFoldIntoDie();
+            // TryFoldIntoDie();
 
 
             // if (_currentDie == null)
@@ -173,9 +349,9 @@ public class BlueprintManager : MonoBehaviour
     }
 
 
-    public Dictionary<BlueprintTile, Vector2Int> TryFoldIntoDie()
+    public Dictionary<BlueprintTile, (BlueprintTile, Vector2Int)> TryFoldIntoDie()
     {
-        Dictionary<BlueprintTile, Vector2Int> folds = new();
+        Dictionary<BlueprintTile, (BlueprintTile, Vector2Int)> folds = new();
 
 
         while (folds.Count < _selectedTiles.Count - 1)
@@ -211,11 +387,16 @@ public class BlueprintManager : MonoBehaviour
                     .Where(t => t.IsSelected && !folds.ContainsKey(t))
                     .ToList();
 
-                Debug.Log($"{position} N neighbors: {neighborTiles.Count}");
+                // Debug.Log($"{position} N neighbors: {neighborTiles.Count}");
 
                 if (neighborTiles.Count == 1)
                 {
-                    folds[tile] = _tilePositions[neighborTiles[0]] - position;
+                    var neighborTile = neighborTiles[0];
+                    folds[tile] = (
+                        neighborTile,
+                        _tilePositions[neighborTile] - position
+                    // * new Vector2Int(-1, 1)
+                    );
                 }
             }
 
@@ -235,7 +416,86 @@ public class BlueprintManager : MonoBehaviour
         // var sum = folds.Values.Aggregate(Vector2Int.zero, (a, b) => a + b);
         // Debug.Log($"Sum: {sum}");
 
-        return null;
+        return folds;
+    }
+
+
+    IEnumerator FoldDie(Dictionary<BlueprintTile, (BlueprintTile, Vector2Int)> folds)
+    {
+        Debug.Log("Folding die");
+        float duration = 1.0f; // in seconds
+        float elapsed = 0.0f;
+
+        Dictionary<BlueprintTile, List<BlueprintTile>> parentToChildren = new();
+
+        foreach (var (tile, (neighbor, _)) in folds)
+        {
+            if (!parentToChildren.ContainsKey(neighbor))
+            {
+                parentToChildren[neighbor] = new List<BlueprintTile>();
+            }
+
+            parentToChildren[neighbor].Add(tile);
+        }
+
+        foreach (var (tile, children) in parentToChildren)
+        {
+            Debug.Log($"Parent: {tile.name}, Children: {string.Join(", ", children.Select(c => c.name))}");
+        }
+
+        yield return null;
+
+        while (true)
+        {
+            foreach (var (tile, (neighbor, dir)) in folds)
+            {
+                var angle = Mathf.Lerp(0f, 90f, Time.deltaTime / duration);
+                var position = dir switch
+                {
+                    Vector2Int v when v == Vector2Int.up => tile.Up.position,
+                    Vector2Int v when v == Vector2Int.down => tile.Down.position,
+                    Vector2Int v when v == Vector2Int.left => tile.Left.position,
+                    Vector2Int v when v == Vector2Int.right => tile.Right.position,
+                    _ => Vector3.zero
+                };
+
+                // var neighborPosition = dir switch
+                // {
+                //     Vector2Int v when v == Vector2Int.up => neighbor.Down.position,
+                //     Vector2Int v when v == Vector2Int.down => neighbor.Up.position,
+                //     Vector2Int v when v == Vector2Int.left => neighbor.Right.position,
+                //     Vector2Int v when v == Vector2Int.right => neighbor.Left.position,
+                //     _ => Vector3.zero
+                // };
+
+
+                // var positionAdjustment = neighborPosition - position;
+                var axis = Vector3.Cross(new Vector3(dir.x, dir.y), Vector3.forward);
+
+                tile.transform.RotateAround(position, axis, angle);
+                PropagateTransformation(parentToChildren, tile, position, axis, angle);
+            }
+
+            elapsed += Time.deltaTime;
+            if (elapsed >= duration)
+            {
+                break;
+            }
+
+            yield return null;
+        }
+    }
+
+    private void PropagateTransformation(Dictionary<BlueprintTile, List<BlueprintTile>> parentToChildren, BlueprintTile tile, Vector3 position, Vector3 axis, float angle)
+    {
+        if (parentToChildren.ContainsKey(tile))
+        {
+            foreach (var child in parentToChildren[tile])
+            {
+                child.transform.RotateAround(position, axis, angle);
+                PropagateTransformation(parentToChildren, child, position, axis, angle);
+            }
+        }
     }
 }
 

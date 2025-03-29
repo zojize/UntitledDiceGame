@@ -7,6 +7,8 @@ public class Unit : MonoBehaviour
     public int maxHP;
     public int currHP;
 
+		public Die[] Inventory;
+
     public bool TakeDamage(int dmg)
 	{
 		currHP -= dmg;
