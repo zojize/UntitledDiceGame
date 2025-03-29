@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public enum combatState { START, PLAYER, ENEMY, WON, LOST }
 
@@ -11,19 +12,19 @@ public class CombatSystem : MonoBehaviour
     public GameObject player;
     public GameObject enemy;
 
-    public CombatHUD playerHUD;
-    public CombatHUD enemyHUD;
-    public TMP_Text playerDamage;
-    public TMP_Text enemyDamage;
+    public static event Action OnBeginPlayerTurn; 
+    // public event Action OnEndPlayerTurn;
+    public static event Action OnBeginEnemyTurn;
+    // public event Action OnEndEnemyTurn;
+    public static event Action OnEndCombat;
 
     public TMP_Text logText;
     public GameObject gameOverPage;
-    public GameObject playerEffect;
-    public GameObject enemyEffect;
 
-    // public DiceManager diceManager;
     public bool liveDice = true;
 
+    private Unit playerUnit;
+    private EnemyUnit enemyUnit;
 
     // For future spawning
     // public Transform playerLoc;
@@ -31,22 +32,19 @@ public class CombatSystem : MonoBehaviour
 
     private combatState state;
 
-    Unit playerUnit;
-    Unit enemyUnit;
-    EffectAnimation playerEffectController;
-    EffectAnimation enemyEffectController;
-
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         gameOverPage.SetActive(false);
         state = combatState.START;
         playerUnit = player.GetComponent<Unit>();
-        enemyUnit = enemy.GetComponent<Unit>();
-        playerEffectController = playerEffect.GetComponent<EffectAnimation>();
-        enemyEffectController = enemyEffect.GetComponent<EffectAnimation>();
-        DiceManager.OnEndSimulationEvent += onReceiveDiceInfo;
+        enemyUnit = enemy.GetComponent<EnemyUnit>();
+
+        DiceManager.OnEndSimulationEvent += OnReceiveDiceInfo;
+        CombatSystem.OnBeginEnemyTurn += OnEnemyTurn;
+        CombatSystem.OnBeginPlayerTurn += OnPlayerTurn;
+        CombatSystem.OnEndCombat += EndCombat;
+
         SetUpCombat();
     }
 
@@ -56,8 +54,11 @@ public class CombatSystem : MonoBehaviour
         // Intantiate(player, playerLoc);
         // Intantiate(enemy, enemyLoc);
 
-        playerHUD.SetHUD(playerUnit);
-        enemyHUD.SetHUD(enemyUnit);
+        CombatSystem.OnBeginPlayerTurn?.Invoke();
+    }
+
+    void OnPlayerTurn() {
+        logText.text = "Your turn.";
         state = combatState.PLAYER;
     }
 
@@ -71,7 +72,7 @@ public class CombatSystem : MonoBehaviour
         }
     }
 
-    public void onReceiveDiceInfo(List<Die> dice)
+    public void OnReceiveDiceInfo(List<Die> dice)
     {
         if (liveDice) {
             if (state != combatState.PLAYER)
@@ -134,11 +135,11 @@ public class CombatSystem : MonoBehaviour
 
         if (state == combatState.WON)
         {
-            EndCombat();
+            CombatSystem.OnEndCombat?.Invoke();
         }
         else
         {
-            StartCoroutine(EnemyTurn());
+            CombatSystem.OnBeginEnemyTurn?.Invoke();
         }
     }
 
@@ -146,13 +147,7 @@ public class CombatSystem : MonoBehaviour
     {
         // TODO: spawning effect
         int finalDamage = damage * mod;
-
         bool isDead = enemyUnit.TakeDamage(finalDamage);
-
-        enemyDamage.text = "-" + finalDamage;
-        enemyEffectController.PlayDamageEffect();
-
-        enemyHUD.SetHP(enemyUnit.currHP);
         logText.text = "The attack is successful! -" + damage + " x" + mod;
 
         if (isDead)
@@ -163,39 +158,30 @@ public class CombatSystem : MonoBehaviour
 
     void PlayerHeal(int hp, int mod)
     {
-        // TODO: spawning effect
-
         int finalHp = hp * mod;
 
         playerUnit.Heal(finalHp);
+        logText.text = "You feel renewed strength! +" + hp + " x" + mod;
+    }
 
-        playerHUD.SetHP(playerUnit.currHP);
-
-        playerEffectController.PlayHealEffect();
-
-        logText.text = "You feel renewed strength! +" + hp + " x"
-        + mod;
+    void OnEnemyTurn() {
+        state = combatState.ENEMY;
+        StartCoroutine(EnemyTurn());
     }
 
     IEnumerator EnemyTurn()
     {
-        int action = Random.Range(0, 2);
         bool isDead = false;
 
-        if (action == 0)
-        {
+        if (enemyUnit.currDamage != 0) {
             logText.text = "Enemy attacks!";
-            isDead = playerUnit.TakeDamage(enemyUnit.damage);
-            playerDamage.text = "-" + enemyUnit.damage;
-            playerEffectController.PlayDamageEffect();
-            playerHUD.SetHP(playerUnit.currHP);
+            Debug.Log($"Enemy Damage: {enemyUnit.currDamage}" );
+            isDead = playerUnit.TakeDamage(enemyUnit.currDamage);
         }
-        else
-        {
+        else {
             logText.text = "Enemy gains more strength.";
-            enemyUnit.Heal(5);
-            enemyEffectController.PlayHealEffect();
-            enemyHUD.SetHP(enemyUnit.currHP);
+            Debug.Log($"Enemy Heal: {enemyUnit.currHeal}" );
+            enemyUnit.Heal(enemyUnit.currHeal);
         }
 
         yield return new WaitForSeconds(1.5f);
@@ -203,12 +189,11 @@ public class CombatSystem : MonoBehaviour
         if (isDead)
         {
             state = combatState.LOST;
-            EndCombat();
+            CombatSystem.OnEndCombat?.Invoke();
         }
         else
         {
-            state = combatState.PLAYER;
-            logText.text = "Your turn.";
+            CombatSystem.OnBeginPlayerTurn?.Invoke();
         }
 
     }
@@ -224,8 +209,13 @@ public class CombatSystem : MonoBehaviour
         {
             logText.text = "You were defeated.";
         }
+
+        // when no restart
+        // CombatSystem.OnBeginPlayerTurn -= NextTurnAction;
+        // CombatSystem.OnBeginEnemyTurn -= DamageAction;
     }
 
+    // will be gone
     public void OnClickRestart()
     {
         logText.text = "";
@@ -233,8 +223,6 @@ public class CombatSystem : MonoBehaviour
         state = combatState.START;
         playerUnit.Reset();
         enemyUnit.Reset();
-        playerHUD.SetHP(playerUnit.currHP);
-        enemyHUD.SetHP(enemyUnit.currHP);
-        state = combatState.PLAYER;
+        CombatSystem.OnBeginPlayerTurn?.Invoke();
     }
 }

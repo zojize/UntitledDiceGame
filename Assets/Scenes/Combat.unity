@@ -2666,14 +2666,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 752068135}
   enemy: {fileID: 2133300015}
-  playerHUD: {fileID: 15878772}
-  enemyHUD: {fileID: 1669346023}
-  playerDamage: {fileID: 1691243372}
-  enemyDamage: {fileID: 549351356}
   logText: {fileID: 100765754}
   gameOverPage: {fileID: 1957093139}
-  playerEffect: {fileID: 1396137624}
-  enemyEffect: {fileID: 1375204983}
   liveDice: 0
 --- !u!1 &963517424
 GameObject:
@@ -3741,6 +3735,7 @@ MonoBehaviour:
   heal: {fileID: 316492266}
   healName: EnemyHealAnim
   damage: {fileID: 549351353}
+  damageName: EnemyDamageAnim
 --- !u!1 &1396137624
 GameObject:
   m_ObjectHideFlags: 0
@@ -3794,6 +3789,7 @@ MonoBehaviour:
   heal: {fileID: 519080218}
   healName: WizardHealAnim
   damage: {fileID: 1691243369}
+  damageName: WizardDamageAnim
 --- !u!1 &1482415417
 GameObject:
   m_ObjectHideFlags: 0
@@ -5344,6 +5340,94 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: hud
+      value: 
+      objectReference: {fileID: 1669346023}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: maxHP
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: currHP
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: animEffect
+      value: 
+      objectReference: {fileID: 1375204983}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: damageEffect
+      value: 
+      objectReference: {fileID: 549351356}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: mod.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: heal.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: damage.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'mod.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'mod.Array.data[1]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'mod.Array.data[2]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'mod.Array.data[3]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'heal.Array.data[0]'
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'heal.Array.data[1]'
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'heal.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'heal.Array.data[3]'
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'damage.Array.data[0]'
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'damage.Array.data[1]'
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'damage.Array.data[2]'
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'damage.Array.data[3]'
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: bossBehaviours.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4416608460336686203, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
+      propertyPath: 'bossBehaviours.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: d703a229aa7a6584893621eaa09af165, type: 2}
     - target: {fileID: 5801871957912608464, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.39
@@ -5384,7 +5468,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1895695162254656484, guid: c36c8e261083ee74b9c19f7573798456, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -5438,6 +5523,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4603764096425991422, guid: c020376933e30264285eaa48465af80d, type: 3}
+      propertyPath: hud
+      value: 
+      objectReference: {fileID: 15878772}
+    - target: {fileID: 4603764096425991422, guid: c020376933e30264285eaa48465af80d, type: 3}
       propertyPath: damge
       value: 10
       objectReference: {fileID: 0}
@@ -5449,6 +5538,14 @@ PrefabInstance:
       propertyPath: currHP
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 4603764096425991422, guid: c020376933e30264285eaa48465af80d, type: 3}
+      propertyPath: animEffect
+      value: 
+      objectReference: {fileID: 1396137624}
+    - target: {fileID: 4603764096425991422, guid: c020376933e30264285eaa48465af80d, type: 3}
+      propertyPath: damageEffect
+      value: 
+      objectReference: {fileID: 1691243372}
     - target: {fileID: 6945190475014689525, guid: c020376933e30264285eaa48465af80d, type: 3}
       propertyPath: m_Name
       value: Char
