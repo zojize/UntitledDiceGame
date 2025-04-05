@@ -42,17 +42,17 @@ public class BlueprintManager : MonoBehaviour
 
         _foldButton.onClick.AddListener(() =>
         {
-            var die = CreateDieFromSelection();
-            if (die == null)
-            {
-                Debug.Log("Failed to create die");
-                return;
-            }
-            else
-                Debug.Log($"Die: {die}");
-            // var folds = TryFoldIntoDie();
-            // if (folds != null)
-            //     StartCoroutine(FoldDie(folds));
+            // var die = CreateDieFromSelection();
+            // if (die == null)
+            // {
+            //     Debug.Log("Failed to create die");
+            //     return;
+            // }
+            // else
+            //     Debug.Log($"Die: {die}");
+            var folds = TryFoldIntoDie();
+            if (folds != null)
+                StartCoroutine(FoldDie(folds));
         });
 
         CreateGrid();
@@ -418,8 +418,6 @@ public class BlueprintManager : MonoBehaviour
 
         return folds;
     }
-
-
     IEnumerator FoldDie(Dictionary<BlueprintTile, (BlueprintTile, Vector2Int)> folds)
     {
         Debug.Log("Folding die");
@@ -438,12 +436,15 @@ public class BlueprintManager : MonoBehaviour
             parentToChildren[neighbor].Add(tile);
         }
 
-        foreach (var (tile, children) in parentToChildren)
+        yield return null;
+
+        var initialState = new Dictionary<BlueprintTile, (Vector3 position, Quaternion rotation)>();
+        foreach (var tile in _selectedTiles)
         {
-            Debug.Log($"Parent: {tile.name}, Children: {string.Join(", ", children.Select(c => c.name))}");
+            initialState[tile] = (tile.transform.position, tile.transform.rotation);
         }
 
-        yield return null;
+
 
         while (true)
         {
@@ -459,22 +460,12 @@ public class BlueprintManager : MonoBehaviour
                     _ => Vector3.zero
                 };
 
-                // var neighborPosition = dir switch
-                // {
-                //     Vector2Int v when v == Vector2Int.up => neighbor.Down.position,
-                //     Vector2Int v when v == Vector2Int.down => neighbor.Up.position,
-                //     Vector2Int v when v == Vector2Int.left => neighbor.Right.position,
-                //     Vector2Int v when v == Vector2Int.right => neighbor.Left.position,
-                //     _ => Vector3.zero
-                // };
-
-
-                // var positionAdjustment = neighborPosition - position;
-                var axis = Vector3.Cross(new Vector3(dir.x, dir.y), Vector3.forward);
-
+                var forward = Vector3.Cross(tile.Right.position - tile.transform.position, tile.Up.position - tile.transform.position);
+                var axis = Vector3.Cross(position - tile.transform.position, forward).normalized;
                 tile.transform.RotateAround(position, axis, angle);
                 PropagateTransformation(parentToChildren, tile, position, axis, angle);
             }
+
 
             elapsed += Time.deltaTime;
             if (elapsed >= duration)
