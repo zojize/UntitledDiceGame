@@ -246,6 +246,42 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2d5c30785659d1f4c929d944156a669d, type: 2}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2d5c30785659d1f4c929d944156a669d, type: 2}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2d5c30785659d1f4c929d944156a669d, type: 2}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: 'm_Materials.Array.data[3]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2d5c30785659d1f4c929d944156a669d, type: 2}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: 'm_Materials.Array.data[4]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2d5c30785659d1f4c929d944156a669d, type: 2}
+    - target: {fileID: -7511558181221131132, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: 'm_Materials.Array.data[5]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2d5c30785659d1f4c929d944156a669d, type: 2}
+    - target: {fileID: -5754084199372789682, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -2088423370225539377, guid: 666a1efb57701c04f9485f9ed2e01fb6, type: 3}
     - target: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
       propertyPath: m_Name
       value: Die
@@ -281,14 +317,14 @@ PrefabInstance:
       addedObject: {fileID: 2938993053264875119}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 8685194831474656292}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3116795093728435510}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5600065905830527140}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8685194831474656292}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3001821519455740533}
@@ -298,6 +334,31 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d77b3014a0251b344b0223051448bd4a, type: 3}
   m_PrefabInstance: {fileID: 4210194813088203949}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8685194831474656292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3939792268979714556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 483b3f0449e599940b4072254ba962c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DragZPosition: -5
+  MaxSpeed: 300
+  MaxForce: 500
+  SlowingDistance: 20
+  RotationSpeed: 1
+  Weights:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  DebugMode: 4
 --- !u!65 &3116795093728435510
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -346,31 +407,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &8685194831474656292
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3939792268979714556}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 483b3f0449e599940b4072254ba962c8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  DragZPosition: -5
-  MaxSpeed: 300
-  MaxForce: 500
-  SlowingDistance: 20
-  RotationSpeed: 1
-  Weights:
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  DebugMode: 4
 --- !u!114 &3001821519455740533
 MonoBehaviour:
   m_ObjectHideFlags: 0
