@@ -28,6 +28,7 @@ public class Shield : BossBehaviour
             shieldOnRound--;
             if (shieldOnRound == 0) {
                 shieldOn = false;
+                enemy.effectText.text = "";
             }
             Debug.Log($"Enemy Shield On: {damage} to {(int) (damageReduceFactor*damage)}" );
             return (int) (damageReduceFactor*damage);
@@ -36,6 +37,7 @@ public class Shield : BossBehaviour
             Debug.Log($"Enemy Damage Taken: {damageTaken}");
             if (damageTaken > damageThreshold) {
                 shieldOn = true;
+                enemy.effectText.text = "Shield";
                 shieldOnRound = shieldRound;
                 damageTaken = 0;
             }

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e704326fd300b714d8e21d3669e8434d, type: 3}
   m_Name: Enrage
   m_EditorClassIdentifier: 
-  damageThresholdFactor: 0
-  damageIncreaseFactor: 0
+  damageThresholdFactor: 0.5
+  damageIncreaseFactor: 1.5

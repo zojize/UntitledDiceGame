@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using TMPro;
 
 public class EnemyUnit : Unit
 {
@@ -10,9 +11,11 @@ public class EnemyUnit : Unit
     public int[] mod;
 
     public List<BossBehaviour> bossBehaviours = new List<BossBehaviour>();
+    private List<BossBehaviour> runtimeBehaviours = new List<BossBehaviour>();
 
     public GameObject healEffect;
     public GameObject attackEffect;
+    public TMP_Text effectText; // temp
 
     public int currDamage;
     public int currHeal;
@@ -20,11 +23,20 @@ public class EnemyUnit : Unit
     protected override void Start() {
         healEffect.SetActive(false);
         attackEffect.SetActive(false);
+        effectText.text = "";
 
-        foreach (var behavior in bossBehaviours)
+        foreach (var behaviour in bossBehaviours)
         {
-            behavior.OnStart(this);
+            var clone = ScriptableObject.Instantiate(behaviour);
+            clone.OnStart(this);
+            runtimeBehaviours.Add(clone);
         }
+
+        // foreach (var behaviour in bossBehaviours)
+        // {
+        //     behaviour = Instantiate(behaviour);
+        //     behaviour.OnStart(this);
+        // }
         base.Start();
 
         CombatSystem.OnBeginPlayerTurn += NextTurnAction;
@@ -50,9 +62,9 @@ public class EnemyUnit : Unit
     }
 
     public override bool TakeDamage(int damage) {
-        foreach (var behavior in bossBehaviours)
+        foreach (var behaviour in runtimeBehaviours)
         {
-            damage = behavior.ModifyDamage(damage, this);
+            damage = behaviour.ModifyDamage(damage, this);
         }
 
         return base.TakeDamage(damage);
@@ -63,9 +75,9 @@ public class EnemyUnit : Unit
         healEffect.SetActive(false);
         attackEffect.SetActive(false);
 
-        foreach (var behavior in bossBehaviours)
+        foreach (var behaviour in runtimeBehaviours)
         {
-            behavior.PerformAction(this);
+            behaviour.PerformAction(this);
         }
     }
     
@@ -73,9 +85,9 @@ public class EnemyUnit : Unit
         healEffect.SetActive(false);
         attackEffect.SetActive(false);
 
-        foreach (var behavior in bossBehaviours)
+        foreach (var behaviour in runtimeBehaviours)
         {
-            behavior.Reset(this);
+            behaviour.Reset(this);
         }
 
         base.Reset();

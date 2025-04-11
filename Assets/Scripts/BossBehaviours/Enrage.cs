@@ -5,9 +5,13 @@ public class Enrage : BossBehaviour
 {
     public float damageThresholdFactor;
     public float damageIncreaseFactor;
+
+    private bool enraged;
     
     public override void OnStart(EnemyUnit enemy)
     {
+        enraged = false;
+        enemy.effectText.text = "";
     }
 
     public override void Reset(EnemyUnit enemy)
@@ -17,12 +21,16 @@ public class Enrage : BossBehaviour
 
     public override int ModifyDamage(int damage, EnemyUnit enemy)
     {
+        if (enemy.currHP - damage < enemy.maxHP*damageThresholdFactor ) {
+            enraged = true;
+            enemy.effectText.text = "Enraged";
+        }
         return damage;
     }
 
     public override void PerformAction(EnemyUnit enemy)
     {
-        if (enemy.currHP < enemy.maxHP*damageThresholdFactor) {
+        if (enraged) {
             Debug.Log($"Enemy Enraged: {enemy.currDamage} to {(int) (enemy.currDamage*damageIncreaseFactor)}" );
             enemy.currDamage = (int) (enemy.currDamage*damageIncreaseFactor);
         }
