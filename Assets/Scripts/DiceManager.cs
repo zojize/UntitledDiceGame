@@ -16,6 +16,7 @@ public class DiceManager : MonoBehaviour
     public Camera DiceCamera;
     public Slider Slider;
     public bool DebugMode = false;
+    public BlueprintManager BlueprintManager;
 
     public record DiceGroupDragEventData
     {

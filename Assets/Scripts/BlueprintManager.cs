@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ public class BlueprintManager : MonoBehaviour
     // the percentage of the screen that the grid should take up in the x and y directions
     public Vector2 DesiredGridSizeOnScreen = new(0.7f, 0.7f);
     public float ZCoord = -20;
+    public event Action<Die> DieCreationEvent;
 
 
     private GameObject _tilePrefab;
@@ -37,8 +39,7 @@ public class BlueprintManager : MonoBehaviour
         _tilePrefab = Resources.Load<GameObject>("Prefabs/BlueprintTile");
         _diePrefab = Resources.Load<GameObject>("Prefabs/Die");
 
-        GameObject button = GameObject.Find("FoldButton");
-        _foldButton = button.GetComponent<UnityEngine.UI.Button>();
+        _foldButton = GameObject.Find("FoldButton").GetComponent<UnityEngine.UI.Button>();
 
         _foldButton.onClick.AddListener(() =>
         {
@@ -50,12 +51,52 @@ public class BlueprintManager : MonoBehaviour
             // }
             // else
             //     Debug.Log($"Die: {die}");
-            var folds = TryFoldIntoDie();
-            if (folds != null)
-                StartCoroutine(FoldDie(folds));
+            StartCoroutine(FoldAndCreateDie());
         });
 
-        CreateGrid();
+        var clearButton = GameObject.Find("ClearButton").GetComponent<UnityEngine.UI.Button>();
+        clearButton.onClick.AddListener(() =>
+        {
+            ClearGrid();
+            ClearDebugSpheres();
+        });
+
+        var createButton = GameObject.Find("CreateButton").GetComponent<UnityEngine.UI.Button>();
+        createButton.onClick.AddListener(() =>
+        {
+            ClearGrid();
+            CreateGrid();
+        });
+        // CreateGrid();
+    }
+
+    public IEnumerator FoldAndCreateDie()
+    {
+        if (_selectedTiles.Count != 6)
+        {
+            yield break;
+        }
+
+        var folds = TryFoldIntoDie();
+        if (folds != null)
+        {
+            yield return StartCoroutine(FoldDie(folds));
+            var die = CreateDieAfterFold();
+            if (die == null)
+            {
+                Debug.Log("Failed to create die after fold");
+                yield break;
+            }
+            else
+                Debug.Log($"Die: {die}");
+        }
+        else
+        {
+            Debug.Log("Failed to fold die");
+            yield break;
+        }
+
+        ClearGrid();
     }
 
     public GameObject CreateDieFromSelection()
@@ -66,10 +107,7 @@ public class BlueprintManager : MonoBehaviour
             return null;
         }
 
-        var die = Instantiate(_diePrefab);
-        var dieComponent = die.GetComponent<Die>();
-        var rigidbody = die.GetComponent<Rigidbody>();
-        rigidbody.isKinematic = true;
+
 
         List<Side> allSides = new()
         {
@@ -149,7 +187,7 @@ public class BlueprintManager : MonoBehaviour
                     if (usedSides.Contains(side))
                     {
                         Debug.Log($"Side {side} already used for tile {tile.name}");
-                        Destroy(die);
+                        // Destroy(die);
                         return null;
                     }
 
@@ -168,7 +206,7 @@ public class BlueprintManager : MonoBehaviour
                 {
                     Debug.Log($"No valid sides for neighbor {neighbor.name}");
 
-                    Destroy(die);
+                    // Destroy(die);
                     return null;
                 }
 
@@ -186,9 +224,14 @@ public class BlueprintManager : MonoBehaviour
         {
             Debug.Log("No valid sides for some tiles");
             Debug.Log($"Tile to sides: {string.Join(", \n", tileToSides.Select(t => $"{t.Key.name}: {string.Join(", ", t.Value)}"))}");
-            Destroy(die);
+            // Destroy(die);
             return null;
         }
+
+        var die = Instantiate(_diePrefab);
+        var dieComponent = die.GetComponent<Die>();
+        var rigidbody = die.GetComponent<Rigidbody>();
+        // rigidbody.isKinematic = true;
 
         foreach (var tile in tileToSides)
         {
@@ -207,10 +250,17 @@ public class BlueprintManager : MonoBehaviour
 
     public void ClearGrid()
     {
+        if (_grid == null)
+        {
+            return;
+        }
+
         foreach (var tile in _grid)
         {
             DestroyImmediate(tile);
         }
+
+        _selectedTiles.Clear();
     }
 
     private readonly List<GameObject> _debugSpheres = new();
@@ -298,13 +348,14 @@ public class BlueprintManager : MonoBehaviour
 
                 var bpTile = tile.GetComponent<BlueprintTile>();
                 bpTile.OnSelectionChangeEvent += OnTileSelectionChange;
-                var randValue = Random.Range(1, 7);
+                var randValue = UnityEngine.Random.Range(1, 7);
                 bpTile.Value = randValue;
                 var randType = DieFaceType.Damage; // TODO: randomize this
                 bpTile.Type = randType;
                 bpTile.SetTexture(Resources.Load<Texture>($"Textures/dice_face_{randValue}"));
                 _grid[y * GridSize.x + x] = tile;
                 _tilePositions[bpTile] = new Vector2Int(x, y);
+
             }
         }
     }
@@ -323,24 +374,6 @@ public class BlueprintManager : MonoBehaviour
             Debug.Log($"Selected tile: {_tilePositions[tile]}");
             _selectedTiles.Add(tile);
             // TryFoldIntoDie();
-
-
-            // if (_currentDie == null)
-            // {
-            //     _currentDie = new DieLogic();
-            //     _currentDie.SetFace(Side.Top, tile);
-            //     SelectedTiles.Add(tile);
-            //     return;
-            // }
-
-            // if (_currentDie.TrySetFace(tile))
-            // {
-            //     SelectedTiles.Add(tile);
-            // }
-            // else
-            // {
-            //     tile.PreventSelection();
-            // }
         }
         else
         {
@@ -461,7 +494,7 @@ public class BlueprintManager : MonoBehaviour
                 };
 
                 var forward = Vector3.Cross(tile.Right.position - tile.transform.position, tile.Up.position - tile.transform.position);
-                var axis = Vector3.Cross(position - tile.transform.position, forward).normalized;
+                var axis = Vector3.Cross(position - tile.transform.position, forward);
                 tile.transform.RotateAround(position, axis, angle);
                 PropagateTransformation(parentToChildren, tile, position, axis, angle);
             }
@@ -487,6 +520,82 @@ public class BlueprintManager : MonoBehaviour
                 PropagateTransformation(parentToChildren, child, position, axis, angle);
             }
         }
+    }
+
+    public GameObject CreateDieAfterFold()
+    {
+        var die = Instantiate(_diePrefab);
+        var dieComponent = die.GetComponent<Die>();
+        // var rigidbody = die.GetComponent<Rigidbody>();
+        // rigidbody.isKinematic = true;
+
+        // move the die to the center selected tiles
+        var center = _selectedTiles.Aggregate(Vector3.zero, (a, b) => a + b.transform.position) / _selectedTiles.Count;
+        die.transform.position = center;
+        Debug.Log($"center: {center}");
+
+        // find sides based on world position vs center
+        // +z Top, -z Bottom, +x Left, -x Right, +y Front, -y Back
+        var tileToSide = new Dictionary<BlueprintTile, Side>();
+        // find the sides using the min/max of the selected tiles
+        var minX = _selectedTiles.Min(t => t.transform.position.x);
+        var maxX = _selectedTiles.Max(t => t.transform.position.x);
+        var minY = _selectedTiles.Min(t => t.transform.position.y);
+        var maxY = _selectedTiles.Max(t => t.transform.position.y);
+        var minZ = _selectedTiles.Min(t => t.transform.position.z);
+        var maxZ = _selectedTiles.Max(t => t.transform.position.z);
+        foreach (var tile in _selectedTiles)
+        {
+            var position = tile.transform.position;
+            if (position.x == minX)
+            {
+                tileToSide[tile] = Side.Left;
+            }
+            else if (position.x == maxX)
+            {
+                tileToSide[tile] = Side.Right;
+            }
+            else if (position.y == minY)
+            {
+                tileToSide[tile] = Side.Back;
+            }
+            else if (position.y == maxY)
+            {
+                tileToSide[tile] = Side.Front;
+            }
+            else if (position.z == minZ)
+            {
+                tileToSide[tile] = Side.Top;
+            }
+            else if (position.z == maxZ)
+            {
+                tileToSide[tile] = Side.Bottom;
+            }
+            else
+            {
+                Debug.Log($"Tile {tile.name} has no valid side");
+                Destroy(die);
+                return null;
+            }
+
+            Debug.Log($"Tile {tile.name} -> {tileToSide[tile]}");
+
+        }
+        // set the die faces based on the tileToSide dictionary
+        foreach (var tile in tileToSide)
+        {
+            var side = tile.Value;
+            if (!dieComponent.TrySetFace(side, tile.Key))
+            {
+                Debug.Log($"Failed to set face {side} for tile {tile.Key.name}");
+                Destroy(die);
+                return null;
+            }
+        }
+
+        DieCreationEvent?.Invoke(dieComponent);
+
+        return die;
     }
 }
 

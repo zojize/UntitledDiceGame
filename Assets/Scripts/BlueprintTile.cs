@@ -13,6 +13,7 @@ public class BlueprintTile : MonoBehaviour, IPointerClickHandler, IDieFace
 
     public DieFaceType Type { get; set; }
     public int Value { get; set; }
+    public Texture Texture { get; set; }
 
     public event Action<BlueprintTile> OnSelectionChangeEvent;
 
@@ -46,6 +47,7 @@ public class BlueprintTile : MonoBehaviour, IPointerClickHandler, IDieFace
     public void SetTexture(Texture texture)
     {
         _renderer.material.mainTexture = texture;
+        Texture = texture;
     }
 
 

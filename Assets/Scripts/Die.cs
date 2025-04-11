@@ -14,6 +14,7 @@ public interface IDieFace
 {
     public DieFaceType Type { get; set; }
     public int Value { get; set; }
+    public Texture Texture { get; set; }
 }
 
 public enum Side
@@ -83,6 +84,17 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     private readonly Transform[] _sideTransforms = new Transform[6];
     private readonly IDieFace[] _faces = new IDieFace[6];
     private bool _isSimulationRunning = false;
+    private Renderer _renderer;
+
+    static private Dictionary<Side, int> _sideToMaterialIndex = new()
+    {
+        { Side.Top, 4 },
+        { Side.Right, 0 },
+        { Side.Front, 1 },
+        { Side.Back, 3 },
+        { Side.Left, 2 },
+        { Side.Bottom, 5 }
+    };
 
     public void Awake()
     {
@@ -94,9 +106,8 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
         if (_outline == null) _outline = gameObject.AddComponent<Outline>();
         _outline.enabled = _isSelected;
         _rigidbody = GetComponent<Rigidbody>();
-        Debug.Assert(_rigidbody != null, "Die must have a Rigidbody component.");
         _collider = GetComponent<Collider>();
-        Debug.Assert(_collider != null, "Die must have a Collider component.");
+        _renderer = GetComponent<Renderer>();
 
         foreach (Transform child in transform)
         {
@@ -440,6 +451,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
             return false;
 
         _faces[(int)side - 1] = face;
+        _renderer.materials[_sideToMaterialIndex[side]].mainTexture = face.Texture;
         return true;
     }
 }
