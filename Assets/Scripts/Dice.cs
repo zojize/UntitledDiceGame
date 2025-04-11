@@ -22,10 +22,10 @@ public class Dice : MonoBehaviour
         
         switch(randomEffect) {
             case effect.DAMAGE:
-                currDamage = Random.Range(1, maxDamage+1);
+                currDamage = Random.Range(4, maxDamage+1);
                 break;
             case effect.HEAL:
-                currHeal = Random.Range(1, maxHeal+1);
+                currHeal = Random.Range(2, maxHeal+1);
                 break;
             case effect.MOD:
                 currMod = Random.Range(1, maxMod+1);
