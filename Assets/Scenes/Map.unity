@@ -690,6 +690,7 @@ MonoBehaviour:
   hoverTile: {fileID: 11400000, guid: e33f24ecf484849ae932601a913e928e, type: 2}
   boss: {fileID: 729855776}
   bosstile: {fileID: 11400000, guid: aa2eb0e4ebfb24a24b526adc82502c46, type: 2}
+  bossHighlight: {fileID: 422381469}
   Width: 6
   Height: 6
   numBlock: 2
