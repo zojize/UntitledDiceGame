@@ -172,9 +172,14 @@ public class BoardManger : MonoBehaviour
     }
 
     void TaskOnClick(){
-        var rnd = new System.Random();
-        int num = rnd.Next(3);
-        UpdateHighlight(1);
+        // var rnd = new System.Random();
+        // int num = rnd.Next(3);
+        // UpdateHighlight(1);
+        GameObject dicePrefab = Resources.Load<GameObject>("Prefab/Dice");
+        GameObject dice = Instantiate(dicePrefab);
+        Dice diceInfo = dice.GetComponent<Dice>();
+        Debug.Log(diceInfo.currDamage);
+        UpdateHighlight(diceInfo.currDamage);
     }
 
     // Update is called once per frame
