@@ -12,10 +12,12 @@ public class CombatSystem : MonoBehaviour
 
     public CombatHUD playerHUD;
     public CombatHUD enemyHUD;
+    public TMP_Text playerDamage;
+    public TMP_Text enemyDamage;
 
     public TMP_Text logText;
     public GameObject gameOverPage;
-    public GameObject wizardEffect;
+    public GameObject playerEffect;
     public GameObject enemyEffect;
 
     // For future spawning
@@ -26,7 +28,7 @@ public class CombatSystem : MonoBehaviour
 
     Unit playerUnit;
     Unit enemyUnit;
-    EffectAnimation wizardEffectController;
+    EffectAnimation playerEffectController;
     EffectAnimation enemyEffectController;
 
 
@@ -37,7 +39,7 @@ public class CombatSystem : MonoBehaviour
         state = combatState.START;
         playerUnit = player.GetComponent<Unit>();
         enemyUnit = enemy.GetComponent<Unit>();
-        wizardEffectController = wizardEffect.GetComponent<EffectAnimation>();
+        playerEffectController = playerEffect.GetComponent<EffectAnimation>();
         enemyEffectController = enemyEffect.GetComponent<EffectAnimation>();
         SetUpCombat();
     }
@@ -125,6 +127,9 @@ public class CombatSystem : MonoBehaviour
 
         bool isDead = enemyUnit.TakeDamage(finalDamage);
 
+        enemyDamage.text = "-" + finalDamage;
+        enemyEffectController.PlayDamageEffect();
+
         enemyHUD.SetHP(enemyUnit.currHP);
         logText.text = "The attack is successful! -" + damage + " x" + mod;
 
@@ -144,7 +149,7 @@ public class CombatSystem : MonoBehaviour
 
         playerHUD.SetHP(playerUnit.currHP);
 
-        wizardEffectController.PlayEffect();
+        playerEffectController.PlayHealEffect();
 
         logText.text = "You feel renewed strength! +" + hp + " x"
         + mod;
@@ -159,13 +164,15 @@ public class CombatSystem : MonoBehaviour
         {
             logText.text = "Enemy attacks!";
             isDead = playerUnit.TakeDamage(enemyUnit.damage);
+            playerDamage.text = "-" + enemyUnit.damage;
+            playerEffectController.PlayDamageEffect();
             playerHUD.SetHP(playerUnit.currHP);
         }
         else
         {
             logText.text = "Enemy gains more strength.";
             enemyUnit.Heal(5);
-            enemyEffectController.PlayEffect();
+            enemyEffectController.PlayHealEffect();
             enemyHUD.SetHP(enemyUnit.currHP);
         }
 
