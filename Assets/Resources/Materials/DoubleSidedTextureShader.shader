@@ -3,20 +3,23 @@ Shader "Unlit/NewUnlitShader"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
         [Toggle] _OutlineEnabled ("Enable Outline", Float) = 0
         _OutlineColor ("Outline Color", Color) = (1,0,0,1)
         _OutlineWidth ("Outline Width", Range(0,0.1)) = 0.01
+        [Toggle] _BlendEnabled ("Blend with Environment", Float) = 1
+        _BackgroundColor ("Background Color", Color) = (1,1,1,1)
     }
     
     SubShader
     {
-        Tags { "RenderType"="TransparentCutout" "Queue"="AlphaTest" }
+        Tags { "RenderType"="Transparent" "Queue"="Transparent" }
         
         // Main pass
         Pass
         {
             Cull Off // Render both sides
+            Blend SrcAlpha OneMinusSrcAlpha // Standard alpha blending
+            // ZWrite [_BlendEnabled] // Only write to depth buffer when not blending
 
             CGPROGRAM
             #pragma vertex vert
@@ -38,10 +41,11 @@ Shader "Unlit/NewUnlitShader"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            float _Cutoff;
             float _OutlineEnabled;
             float4 _OutlineColor;
             float _OutlineWidth;
+            float _BlendEnabled;
+            float4 _BackgroundColor;
 
             v2f vert (appdata v)
             {
@@ -64,7 +68,12 @@ Shader "Unlit/NewUnlitShader"
                 }
 
                 fixed4 col = tex2D(_MainTex, uv);
-                clip(col.a - _Cutoff);
+                
+                // If blending is disabled, composite the texture on top of the background color
+                if (_BlendEnabled < 0.5) {
+                    col = fixed4(col.rgb * col.a + _BackgroundColor.rgb * (1 - col.a), 1.0);
+                }
+                
                 return col;
             }
             ENDCG
