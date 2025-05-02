@@ -34,7 +34,7 @@ public class DiceManager : MonoBehaviour
     public static event Action<List<Die>> OnEndSimulationEvent;
 
     private static Die _groupDragInitiator;
-    private static readonly List<Die> SelectedDice = new();
+    public static readonly List<Die> SelectedDice = new();
 
     private static int MAX_SIMULATION_FRAMES;
     private const float JITTER_POSITION_THRESHOLD = 0.01f;
@@ -237,6 +237,12 @@ public class DiceManager : MonoBehaviour
             {
                 _isSimulationRunning = false;
                 if (DebugMode) Debug.Log($"Dices should roll to Side {string.Join(", ", _desiredSides)}");
+                Debug.Log($"Dices should roll to value: ");
+                for (int i = 0; i < _desiredSides.Count; i++)
+                {
+                    IDieFace face = SelectedDice[i].GetFace((Side)_desiredSides[i]);
+                    Debug.Log(face.Value);
+                }
                 if (DebugMode) Debug.Log("Simulation playback complete");
                 OnEndSimulationEvent?.Invoke(SelectedDice);
             }

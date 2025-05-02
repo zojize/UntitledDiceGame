@@ -87,10 +87,17 @@ public class CombatSystem : MonoBehaviour
         if (liveDice) {
             int damage = 0;
 
-            List<int> diceValues = DiceManager._desiredSides;
-            for (int i = 0; i < diceValues.Count; i++) {
-                damage += diceValues[i];
+            List<int> sides = DiceManager._desiredSides;
+            List<Die> dice = DiceManager.SelectedDice;
+            for (int i = 0; i < dice.Count; i++) {
+                IDieFace face = dice[i].GetFace((Side)sides[i]);
+                damage += face.Value;                
             }
+
+            // List<int> diceValues = DiceManager._desiredSides;
+            // for (int i = 0; i < diceValues.Count; i++) {
+            //     damage += diceValues[i];
+            // }
 
             Debug.Log($"Damage: {damage}");
             PlayerAttack(damage, 1);
