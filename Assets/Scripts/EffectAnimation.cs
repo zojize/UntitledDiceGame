@@ -6,6 +6,7 @@ public class EffectAnimation : MonoBehaviour
     public GameObject heal;
     public string healName;
     public GameObject damage;
+    public string damageName;
 
     Animator healAnimator;
     Animator damageAnimator;
@@ -27,7 +28,7 @@ public class EffectAnimation : MonoBehaviour
     public void PlayDamageEffect()
     {
         damage.SetActive(true);
-        damageAnimator.Play("DamageAnim");
+        damageAnimator.Play(damageName);
         StartCoroutine(DisableEffect(damage, damageAnimator));
     }
 

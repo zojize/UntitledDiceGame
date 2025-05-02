@@ -192,6 +192,10 @@ public class DiceManager : MonoBehaviour
         for (int i = 0; i < SelectedDice.Count; i++ ){
             _desiredSides.Add(UnityEngine.Random.Range(1, 7));
         }
+        _desiredSides.Clear();
+        for (int i = 0; i < SelectedDice.Count; i++ ){
+            _desiredSides.Add(UnityEngine.Random.Range(1, 7));
+        }
         _isSimulationRunning = true;
 
         var startTime = Time.realtimeSinceStartup;
