@@ -197,6 +197,7 @@ public class BoardManger : MonoBehaviour
                 outer = 0;
             }
             vst[nwx, nwy] = 1;
+            
         }
 
         // Right mouse click -> remove path tile

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using System.Linq;
 
 public enum combatState { START, PLAYER, ENEMY, WON, LOST }
 
@@ -87,11 +88,11 @@ public class CombatSystem : MonoBehaviour
         if (liveDice) {
             int damage = 0;
 
-            List<int> sides = DiceManager._desiredSides;
             List<Die> dice = DiceManager.SelectedDice;
+            var sides = dice.Select(d => d.GetTopSide()).ToList();
             for (int i = 0; i < dice.Count; i++) {
-                IDieFace face = dice[i].GetFace((Side)sides[i]);
-                damage += face.Value;                
+                IDieFace face = dice[i].GetFace(sides[i]);
+                damage += face.Value;
             }
 
             // List<int> diceValues = DiceManager._desiredSides;
