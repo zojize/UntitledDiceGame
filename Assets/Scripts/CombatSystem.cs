@@ -85,60 +85,55 @@ public class CombatSystem : MonoBehaviour
 
     IEnumerator PlayerAction()
     {
-        if (liveDice) {
-            int damage = 0;
+        int damage = 0;
+        int heal = 0;
+        int mod = 1;
 
+        if (liveDice) {
             List<Die> dice = DiceManager.SelectedDice;
             var sides = dice.Select(d => d.GetTopSide()).ToList();
             for (int i = 0; i < dice.Count; i++) {
-                IDieFace face = dice[i].GetFace(sides[i]);
-                damage += face.Value;
+                IDieFace face = dice[i].GetFace((Side)sides[i]);
+                if (face.Type == DieFaceType.Damage) {
+                    damage += face.Value;
+                } else if (face.Type == DieFaceType.Heal) {
+                    heal += face.Value;
+                } else if (face.Type == DieFaceType.Multiplier) {
+                    mod *= face.Value;
+                }     
             }
-
-            // List<int> diceValues = DiceManager._desiredSides;
-            // for (int i = 0; i < diceValues.Count; i++) {
-            //     damage += diceValues[i];
-            // }
-
-            Debug.Log($"Damage: {damage}");
-            PlayerAttack(damage, 1);
-            yield return new WaitForSeconds(1.5f);
         } else {
-            // calculate damage and hp
-            int tempDamage = 0;
-            int tempHP = 0;
-            int tempMod = 1;
             GameObject dicePrefab = Resources.Load<GameObject>("Prefabs/Dice");
             for (int i = 0; i < 3; i++)
             {
                 GameObject dice = Instantiate(dicePrefab);
                 Dice diceInfo = dice.GetComponent<Dice>();
 
-                tempDamage += diceInfo.currDamage;
-                tempHP += diceInfo.currHeal;
-                tempMod *= diceInfo.currMod;
+                damage += diceInfo.currDamage;
+                heal += diceInfo.currHeal;
+                mod *= diceInfo.currMod;
                 // Destroy(dice);
             }
-            Debug.Log((tempDamage, tempHP, tempMod));
+        }
+        Debug.Log((damage, heal, mod));
+        
+        if (heal != 0)
+        {
+            PlayerHeal(heal, mod);
+            yield return new WaitForSeconds(1.5f);
+        }
 
-            if (tempHP != 0)
-            {
-                PlayerHeal(tempHP, tempMod);
-                yield return new WaitForSeconds(1.5f);
-            }
+        if (heal == 0 && damage == 0)
+        {
+            // mod being taken as damage
+            damage = mod;
+            mod = 1;
+        }
 
-            if (tempHP == 0 && tempDamage == 0)
-            {
-                // mod being taken as damage
-                tempDamage = tempMod;
-                tempMod = 1;
-            }
-
-            if (tempDamage != 0)
-            {
-                PlayerAttack(tempDamage, tempMod);
-                yield return new WaitForSeconds(1.5f);
-            }
+        if (damage != 0)
+        {
+            PlayerAttack(damage, mod);
+            yield return new WaitForSeconds(1.5f);
         }
 
         if (state == combatState.WON)
