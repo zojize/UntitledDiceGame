@@ -281,12 +281,10 @@ public class BlueprintManager : MonoBehaviour
         _debugSpheres.Clear();
     }
 
-    public void CreateGrid()
+    public void CreateGrid(ITileFactory tileFactory = null)
     {
-        if (_tilePrefab == null)
-        {
-            _tilePrefab = Resources.Load<GameObject>("Prefabs/BlueprintTile");
-        }
+        tileFactory ??= new VariedTileFactory();
+        // tileFactory ??= new BasicTileFactory();
 
         var bounds = _tilePrefab.GetComponent<Renderer>().bounds;
 
@@ -334,8 +332,7 @@ public class BlueprintManager : MonoBehaviour
         {
             for (int y = 0; y < GridSize.x; y++)
             {
-                var tile = Instantiate(
-                    _tilePrefab,
+                var tile = tileFactory.CreateTile(
                     new Vector3(bottomLeft.x + x * tileSize.x + tileOffset.x, bottomLeft.y + y * tileSize.y + tileOffset.y, bottomLeft.z),
                     Quaternion.Euler(90, 180, 0)
                 );
@@ -346,11 +343,6 @@ public class BlueprintManager : MonoBehaviour
 
                 var bpTile = tile.GetComponent<BlueprintTile>();
                 bpTile.OnSelectionChangeEvent += OnTileSelectionChange;
-                var randValue = UnityEngine.Random.Range(1, 7);
-                bpTile.Value = randValue;
-                var randType = DieFaceType.Damage; // TODO: randomize this
-                bpTile.Type = randType;
-                bpTile.SetTexture(Resources.Load<Texture>($"Textures/dice_face_{randValue}"));
                 _grid[y * GridSize.x + x] = tile;
                 _tilePositions[bpTile] = new Vector2Int(x, y);
 
