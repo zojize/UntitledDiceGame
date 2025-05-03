@@ -89,10 +89,10 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     static private Dictionary<Side, int> _sideToMaterialIndex = new()
     {
         { Side.Top, 4 },
-        { Side.Right, 0 },
-        { Side.Front, 1 },
-        { Side.Back, 3 },
-        { Side.Left, 2 },
+        { Side.Right, 2 },
+        { Side.Front, 3 },
+        { Side.Back, 1 },
+        { Side.Left, 0 },
         { Side.Bottom, 5 }
     };
 
