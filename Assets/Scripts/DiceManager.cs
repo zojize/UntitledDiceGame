@@ -14,7 +14,7 @@ public class DiceManager : MonoBehaviour
 {
     public static DiceManager Instance { get; private set; }
     public Camera DiceCamera;
-    public Slider Slider;
+    // public Slider Slider;
     public bool DebugMode = false;
     public BlueprintManager BlueprintManager;
 
@@ -34,13 +34,13 @@ public class DiceManager : MonoBehaviour
     public static event Action<List<Die>> OnEndSimulationEvent;
 
     private static Die _groupDragInitiator;
-    private static readonly List<Die> SelectedDice = new();
+    public static readonly List<Die> SelectedDice = new();
 
     private static int MAX_SIMULATION_FRAMES;
     private const float JITTER_POSITION_THRESHOLD = 0.01f;
     private const float JITTER_ROTATION_THRESHOLD = 0.1f;
-    private Side _desiredSide = Side.Top;
-
+    // private Side _desiredSide = Side.Top;
+    public static List<int> _desiredSides = new List<int> {};
     private GameObject _diePrefab;
 
     void Awake()
@@ -68,7 +68,7 @@ public class DiceManager : MonoBehaviour
 
         // Set maximum simulation frames equal to 10 seconds of simulation
         MAX_SIMULATION_FRAMES = (int)(1f / Time.fixedDeltaTime) * 10;
-        Slider.onValueChanged.AddListener((val) => _desiredSide = (Side)val);
+        // Slider.onValueChanged.AddListener((val) => _desiredSide = (Side)val);
     }
 
     private static void OnDieAwake(Die die)
@@ -188,6 +188,14 @@ public class DiceManager : MonoBehaviour
 
     private static void BeginSimulation()
     {
+        _desiredSides.Clear();
+        for (int i = 0; i < SelectedDice.Count; i++ ){
+            _desiredSides.Add(UnityEngine.Random.Range(1, 7));
+        }
+        _desiredSides.Clear();
+        for (int i = 0; i < SelectedDice.Count; i++ ){
+            _desiredSides.Add(UnityEngine.Random.Range(1, 7));
+        }
         _isSimulationRunning = true;
 
         var startTime = Time.realtimeSinceStartup;
@@ -220,13 +228,21 @@ public class DiceManager : MonoBehaviour
                     var state = frame[i];
                     var die = SelectedDice.ElementAt(i);
                     die.transform.SetPositionAndRotation(state.Position, state.Rotation);
-                    die.RotateToDesiredSide(_finalSides[i], _desiredSide);
+                    // die.RotateToDesiredSide(_finalSides[i], _desiredSide);
+                    die.RotateToDesiredSide(_finalSides[i], (Side)_desiredSides[i]);
                 }
                 OnSimulationEvent?.Invoke(SelectedDice);
             }
             else
             {
                 _isSimulationRunning = false;
+                if (DebugMode) Debug.Log($"Dices should roll to Side {string.Join(", ", _desiredSides)}");
+                Debug.Log($"Dices should roll to value: ");
+                for (int i = 0; i < _desiredSides.Count; i++)
+                {
+                    IDieFace face = SelectedDice[i].GetFace((Side)_desiredSides[i]);
+                    Debug.Log(face.Value);
+                }
                 if (DebugMode) Debug.Log("Simulation playback complete");
                 OnEndSimulationEvent?.Invoke(SelectedDice);
             }

@@ -1,0 +1,38 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "Enrage", menuName = "EnemyBehaviours/Enrage")]
+public class Enrage : BossBehaviour
+{
+    public float damageThresholdFactor;
+    public float damageIncreaseFactor;
+
+    private bool enraged;
+    
+    public override void OnStart(EnemyUnit enemy)
+    {
+        enraged = false;
+        enemy.effectText.text = "";
+    }
+
+    public override void Reset(EnemyUnit enemy)
+    {
+        OnStart(enemy);
+    }
+
+    public override int ModifyDamage(int damage, EnemyUnit enemy)
+    {
+        if (enemy.currHP - damage < enemy.maxHP*damageThresholdFactor ) {
+            enraged = true;
+            enemy.effectText.text = "Enraged";
+        }
+        return damage;
+    }
+
+    public override void PerformAction(EnemyUnit enemy)
+    {
+        if (enraged) {
+            Debug.Log($"Enemy Enraged: {enemy.currDamage} to {(int) (enemy.currDamage*damageIncreaseFactor)}" );
+            enemy.currDamage = (int) (enemy.currDamage*damageIncreaseFactor);
+        }
+    }
+}
