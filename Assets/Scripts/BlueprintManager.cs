@@ -107,8 +107,6 @@ public class BlueprintManager : MonoBehaviour
             return null;
         }
 
-
-
         List<Side> allSides = new()
         {
             Side.Top,
@@ -582,6 +580,8 @@ public class BlueprintManager : MonoBehaviour
                 Debug.Log($"Failed to set face {side} for tile {tile.Key.name}");
                 Destroy(die);
                 return null;
+            }  else {
+                Debug.Log($"Succeed in setting face {side} for tile {tile.Key.name}!!");
             }
         }
 

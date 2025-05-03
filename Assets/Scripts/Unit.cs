@@ -1,23 +1,32 @@
 using UnityEngine;
+using TMPro;
 
 public class Unit : MonoBehaviour
 {
-    public int damage;
-
     public int maxHP;
     public int currHP;
+	public CombatHUD hud;
+	public GameObject animEffect;
+	public TMP_Text damageEffect;
+	private EffectAnimation effectController;
 
-		public Die[] Inventory;
+ 	protected virtual void Start() {
+		hud.SetHUD(this);
+		effectController = animEffect.GetComponent<EffectAnimation>();
+	}
 
-    public bool TakeDamage(int dmg)
+    public virtual bool TakeDamage(int dmg)
 	{
 		currHP -= dmg;
+		damageEffect.text = "-" + dmg;
+		effectController.PlayDamageEffect();
 
 		if (currHP <= 0) {
 			currHP = 0;
+			hud.SetHP(currHP);
 			return true;
-		}
-		else {
+		} else {
+			hud.SetHP(currHP);
 			return false;
 		}
 	}
@@ -27,17 +36,13 @@ public class Unit : MonoBehaviour
 		currHP += amount;
 		if (currHP > maxHP)
 			currHP = maxHP;
+		hud.SetHP(currHP);
+		effectController.PlayHealEffect();
 	}
 
-    // // Start is called once before the first execution of Update after the MonoBehaviour is created
-    // void Start()
-    // {
-        
-    // }
-
-    // // Update is called once per frame
-    // void Update()
-    // {
-        
-    // }
+	public virtual void Reset()
+	{
+		currHP = maxHP;
+		hud.SetHP(currHP);
+	}
 }
