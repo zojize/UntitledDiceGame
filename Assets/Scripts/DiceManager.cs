@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using System;
 using UnityEngine.UI;
+using System.Collections;
 
 namespace System.Runtime.CompilerServices
 {
@@ -17,6 +18,19 @@ public class DiceManager : MonoBehaviour
     // public Slider Slider;
     public bool DebugMode = false;
     public BlueprintManager BlueprintManager;
+
+    // Camera arrangement settings
+    private float CameraDistanceZ = -10f;
+    public float DicePresentationSpacingMultiplier = 1.2f;
+    public float DicePresentationDuration = 0.5f;
+    public float DicePresentationShowDuration = 2.0f;
+    public float DicePresentationHeight = 0f;
+
+    // Scale factor for dice during presentation
+
+    // Animation curves for smoother movement
+    public AnimationCurve PositionCurve;
+    public AnimationCurve RotationCurve;
 
     public record DiceGroupDragEventData
     {
@@ -40,7 +54,7 @@ public class DiceManager : MonoBehaviour
     private const float JITTER_POSITION_THRESHOLD = 0.01f;
     private const float JITTER_ROTATION_THRESHOLD = 0.1f;
     // private Side _desiredSide = Side.Top;
-    public static List<int> _desiredSides = new List<int> {};
+    public static List<int> _desiredSides = new List<int> { };
     private GameObject _diePrefab;
 
     void Awake()
@@ -68,7 +82,23 @@ public class DiceManager : MonoBehaviour
 
         // Set maximum simulation frames equal to 10 seconds of simulation
         MAX_SIMULATION_FRAMES = (int)(1f / Time.fixedDeltaTime) * 10;
-        // Slider.onValueChanged.AddListener((val) => _desiredSide = (Side)val);
+
+        // Initialize position and rotation animation curves if they're null
+        if (PositionCurve == null || PositionCurve.keys.Length == 0)
+        {
+            PositionCurve = new AnimationCurve(
+                new Keyframe(0, 0, 0, 1),
+                new Keyframe(1, 1, 1, 0)
+            );
+        }
+
+        if (RotationCurve == null || RotationCurve.keys.Length == 0)
+        {
+            RotationCurve = new AnimationCurve(
+                new Keyframe(0, 0, 0, 1),
+                new Keyframe(1, 1, 1, 0)
+            );
+        }
     }
 
     private static void OnDieAwake(Die die)
@@ -189,11 +219,13 @@ public class DiceManager : MonoBehaviour
     private static void BeginSimulation()
     {
         _desiredSides.Clear();
-        for (int i = 0; i < SelectedDice.Count; i++ ){
+        for (int i = 0; i < SelectedDice.Count; i++)
+        {
             _desiredSides.Add(UnityEngine.Random.Range(1, 7));
         }
         _desiredSides.Clear();
-        for (int i = 0; i < SelectedDice.Count; i++ ){
+        for (int i = 0; i < SelectedDice.Count; i++)
+        {
             _desiredSides.Add(UnityEngine.Random.Range(1, 7));
         }
         _isSimulationRunning = true;
@@ -245,10 +277,105 @@ public class DiceManager : MonoBehaviour
                 }
                 if (DebugMode) Debug.Log("Simulation playback complete");
                 OnEndSimulationEvent?.Invoke(SelectedDice);
+
+                // Arrange the dice in a line facing the camera
+                StartCoroutine(ArrangeDiceForPresentation());
             }
         }
     }
 
+    // Coroutine to animate dice moving to their final presentation positions
+    private IEnumerator ArrangeDiceForPresentation()
+    {
+        if (SelectedDice.Count == 0) yield break;
+
+
+        var selectedDice = SelectedDice.ToList();
+
+        foreach (var die in selectedDice)
+        {
+            die.IsSelected = false;
+        }
+
+        Dictionary<Die, (Vector3 startPos, Quaternion startRot, Vector3 startScale)> originalStates = new();
+
+        float maxDieWidth = 0f;
+
+        foreach (var die in selectedDice)
+        {
+            originalStates[die] = (die.transform.position, die.transform.rotation, die.transform.localScale);
+
+            die.Rigidbody.isKinematic = true;
+
+            if (die.TryGetComponent<Collider>(out var collider))
+            {
+                float width = collider.bounds.size.x * 1;
+                if (width > maxDieWidth) maxDieWidth = width;
+            }
+
+        }
+
+        float dieSpacing = maxDieWidth * DicePresentationSpacingMultiplier;
+        float totalWidth = (selectedDice.Count - 1) * dieSpacing;
+        float startX = -totalWidth / 2f;
+        Dictionary<Die, (Vector3 targetPosition, Quaternion targetRotation)> targetStates = new();
+
+        for (int i = 0; i < selectedDice.Count; i++)
+        {
+            var die = selectedDice[i];
+
+            Vector3 targetPosition = new(
+                startX + (i * dieSpacing),
+                DicePresentationHeight,
+                CameraDistanceZ
+            );
+
+            var sideTransform = die.GetSideTransform(die.GetTopSide());
+            var targetRotation = Quaternion.FromToRotation(sideTransform.forward, Vector3.up) * die.transform.rotation;
+            
+            if (DebugMode) Debug.Log($"Die {i} target rotation: {targetRotation.eulerAngles}");
+            
+            targetStates[die] = (targetPosition, targetRotation);
+        }
+
+        float elapsedTime = 0f;
+        while (elapsedTime < DicePresentationDuration)
+        {
+            float normalizedTime = elapsedTime / DicePresentationDuration;
+            float positionT = PositionCurve.Evaluate(normalizedTime);
+            float rotationT = RotationCurve.Evaluate(normalizedTime);
+
+            foreach (var die in selectedDice)
+            {
+                var (startPos, startRot, startScale) = originalStates[die];
+                var (targetPosition, targetRotation) = targetStates[die];
+
+                die.transform.SetPositionAndRotation(
+                    Vector3.Lerp(startPos, targetPosition, positionT),
+                    Quaternion.Slerp(startRot, targetRotation, rotationT)
+                );
+            }
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        foreach (var die in selectedDice)
+        {
+            var (targetPosition, targetRotation) = targetStates[die];
+            die.transform.SetPositionAndRotation(targetPosition, targetRotation);
+        }
+
+        yield return new WaitForSeconds(DicePresentationShowDuration);
+
+        foreach (var die in selectedDice)
+        {
+            die.Rigidbody.isKinematic = false;
+            die.Rigidbody.useGravity = true;
+            die.Rigidbody.linearVelocity = Vector3.zero;
+            die.Rigidbody.angularVelocity = Vector3.zero;
+        }
+    }
 
     private static (List<List<DiceRollState>> result, Side[] sides) SimulateDiceRoll(IEnumerable<Die> dice)
     {
@@ -257,11 +384,9 @@ public class DiceManager : MonoBehaviour
         var diceArray = dice.ToArray();
         var sides = Enumerable.Repeat((Side)0, diceArray.Length).ToArray();
 
-        // Store current physics state
         var originalSimMode = Physics.simulationMode;
         Physics.simulationMode = SimulationMode.Script;
 
-        // Record initial states and prepare for simulation
         foreach (var die in diceArray)
         {
             var rb = die.Rigidbody;
@@ -309,7 +434,6 @@ public class DiceManager : MonoBehaviour
             frameCount++;
         }
 
-        // Restore initial states
         for (int i = 0; i < initialStates.Count; i++)
         {
             var die = diceArray.ElementAt(i);
@@ -321,8 +445,6 @@ public class DiceManager : MonoBehaviour
             rb.linearVelocity = initialState.Velocity;
             rb.angularVelocity = initialState.AngularVelocity;
         }
-
-
 
         int stableFrames = FindStableSequenceLength(result);
         float stableTime = stableFrames * Time.fixedDeltaTime;
@@ -337,7 +459,6 @@ public class DiceManager : MonoBehaviour
             if (Instance.DebugMode) Debug.LogWarning($"Dice simulation stopped after {frameCount} frames without reaching rest state");
         }
 
-        // Restore physics state
         Physics.simulationMode = originalSimMode;
 
         return (result, sides);

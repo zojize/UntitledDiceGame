@@ -52,7 +52,7 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     public bool IsSelected
     {
         get => _isSelected;
-        private set
+        set
         {
             _isSelected = value;
             SelectionChangeHandler(_isSelected);
@@ -149,11 +149,15 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
     {
         if (_isSimulationRunning) return;
         _isDragging = true;
-        // _dragOffset = transform.position - GetMouseWorldPosition(eventData);
-        // _dragOffset = Vector3.zero;
+
+        Vector3 newPosition = GetMouseWorldPosition(eventData);
+        _dragOffset = transform.position - newPosition;
+        _dragOffset.z = 0;
+
         _rigidbody.useGravity = false;
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
+        OnDragHandler(eventData);
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -363,6 +367,26 @@ public class Die : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandl
             topSide = i + 1;
         }
         return (Side)topSide;
+    }
+
+    public Transform GetSideTransform(Side side)
+    {
+        return _sideTransforms[(int)side - 1];
+    }
+    
+    // Rotate the die to present the specified side facing toward the camera
+    public void RotateToFaceCamera(Side sideToShow)
+    {
+        // First, make the specified side the top side
+        Side currentTopSide = GetTopSide();
+        if (currentTopSide != sideToShow)
+        {
+            RotateToDesiredSide(currentTopSide, sideToShow);
+        }
+        
+        // Then rotate the whole die so the top face points to the camera
+        // Using 0 for Y rotation (not 180) to fix the upside-down issue
+        transform.rotation = Quaternion.Euler(90f, 0f, 0f);
     }
 
     private void Inspect()
