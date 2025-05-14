@@ -90,6 +90,7 @@ public class CombatSystem : MonoBehaviour
         int mod = 1;
 
         if (liveDice) {
+            // List<int> sides = DiceManager._desiredSides;
             List<Die> dice = DiceManager.SelectedDice;
             var sides = dice.Select(d => d.GetTopSide()).ToList();
             for (int i = 0; i < dice.Count; i++) {
@@ -187,7 +188,7 @@ public class CombatSystem : MonoBehaviour
             enemyUnit.Heal(enemyUnit.currHeal);
         }
 
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(2f);
 
         if (isDead)
         {

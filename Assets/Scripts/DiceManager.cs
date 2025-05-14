@@ -268,6 +268,7 @@ public class DiceManager : MonoBehaviour
             else
             {
                 _isSimulationRunning = false;
+                if (DebugMode) Debug.Log($"Dice count {SelectedDice.Count} Side count {_desiredSides.Count}");
                 if (DebugMode) Debug.Log($"Dices should roll to Side {string.Join(", ", _desiredSides)}");
                 Debug.Log($"Dices should roll to value: ");
                 for (int i = 0; i < _desiredSides.Count; i++)
@@ -283,6 +284,35 @@ public class DiceManager : MonoBehaviour
             }
         }
     }
+
+    // For external use of dice rolling
+    public static List<int> RollDice(List<Die> dice, List<int> desiredSides)
+    {
+      
+        var (result, sides) = SimulateDiceRoll(dice);
+
+        // Couldn't figure out how to finish all simulation
+        // Need use the data right after the simulation in the same calling function
+        // NOW Directly transform into the desired sides
+        for (int i = 0; i < result.Last().Count; i++)
+        {
+            var state = result.Last()[i];
+            var die = dice[i];
+            die.transform.SetPositionAndRotation(state.Position, state.Rotation);
+            die.RotateToDesiredSide(sides[i], (Side)desiredSides[i]);
+        }
+
+        // Return rolled values
+        List<int> values = new();
+        for (int i = 0; i < dice.Count; i++)
+        {
+            IDieFace face = dice[i].GetFace((Side)desiredSides[i]);
+            values.Add(face.Value);
+        }
+
+        return values;
+    }
+
 
     // Coroutine to animate dice moving to their final presentation positions
     private IEnumerator ArrangeDiceForPresentation()
